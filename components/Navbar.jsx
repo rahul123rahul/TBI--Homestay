@@ -1,18 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      setIsLoggedIn(localStorage.getItem("isStaffLoggedIn") === "true");
+    };
+
+    // Initial check
+    checkAuth();
+
+    // Listen for custom authentication changes
+    window.addEventListener("auth-change", checkAuth);
+    return () => {
+      window.removeEventListener("auth-change", checkAuth);
+    };
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem("isStaffLoggedIn");
+    window.dispatchEvent(new Event("auth-change"));
+    router.push("/");
+  };
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Dashboard", href: "/dashboard" },
+    ...(isLoggedIn ? [{ name: "Dashboard", href: "/dashboard" }] : []),
     { name: "About", href: "/about" },
-    { name: "Login", href: "/login" },
   ];
 
   const isActive = (href) => {
@@ -30,7 +52,6 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md transition-all group-hover:scale-105">
-                {/* Custom pine/mountain/eco leaf SVG */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -76,23 +97,23 @@ export default function Navbar() {
           {/* Profile/Menu Icon on the Right */}
           <div className="hidden md:flex items-center gap-4">
             <span className="text-xs text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full font-medium">
-              Staff Portal
+              {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
             </span>
-            <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted border border-border hover:bg-muted/80 text-muted-foreground transition-all">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5 text-primary"
+            {isLoggedIn ? (
+              <button
+                onClick={handleSignOut}
+                className="inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-accent-foreground shadow-sm transition-all hover:bg-accent/90"
               >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </button>
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
 
           {/* Hamburger Menu Toggle - Mobile */}
@@ -149,23 +170,29 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-            <div className="border-t border-border mt-4 pt-4 px-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Staff Portal</span>
-              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted border border-border">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5 text-primary"
+            <div className="border-t border-border mt-4 pt-4 px-3 flex flex-col gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
+              </span>
+              {isLoggedIn ? (
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleSignOut();
+                  }}
+                  className="w-full inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground"
                 >
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </button>
+                  Sign Out
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </div>

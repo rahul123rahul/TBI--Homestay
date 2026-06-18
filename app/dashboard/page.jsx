@@ -1,6 +1,35 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(null);
+  const [countdown, setCountdown] = useState(3);
+
+  // Authorization checking
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("isStaffLoggedIn") === "true";
+    setIsAuthorized(loggedIn);
+
+    if (!loggedIn) {
+      // Start countdown to redirect
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            router.push("/login");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [router]);
+
   const stats = [
     { name: "Total Reviews Processed", value: "348", change: "+12% this week" },
     { name: "Average Sentiment Score", value: "4.7 / 5.0", change: "+0.3 points" },
@@ -23,6 +52,64 @@ export default function Dashboard() {
     { name: "Value & Price", count: 16, percentage: "5%" },
   ];
 
+  // Loading state
+  if (isAuthorized === null) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8 bg-muted/10 min-h-[50vh]">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <span className="text-sm font-semibold text-muted-foreground">Verifying staff credentials...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Access Denied state
+  if (!isAuthorized) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 bg-muted/10 min-h-[60vh]">
+        <div className="w-full max-w-md bg-card border border-red-200 dark:border-red-900/30 rounded-3xl p-8 shadow-xl text-center space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-500" />
+          
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className="h-8 w-8"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-red-800 dark:text-red-400">Access Denied</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The telemetry dashboard is restricted to authorized Trishul Eco-Homestays staff members only.
+            </p>
+          </div>
+
+          <div className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl p-4">
+            <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+              Redirecting to Login Portal in <span className="font-bold text-sm text-red-800 dark:text-red-300">{countdown}s</span>...
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push("/login")}
+            className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/95 shadow-md transition-all focus:outline-none"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render Authorized Dashboard
   return (
     <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
       <div className="border-b border-border pb-6">
@@ -50,7 +137,6 @@ export default function Dashboard() {
           <h2 className="text-lg font-bold tracking-tight text-primary">Sentiment Trends</h2>
           <p className="text-xs text-muted-foreground">Weekly distribution of Positive, Neutral, and Negative reviews.</p>
           
-          {/* Custom SVG Bar Chart */}
           <div className="mt-6 h-64 w-full flex items-end justify-between gap-4 px-2">
             <div className="flex-1 flex flex-col items-center h-full justify-end">
               <div className="w-full bg-green-100 dark:bg-green-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "82%" }}>

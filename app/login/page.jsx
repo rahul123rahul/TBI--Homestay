@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const router = useRouter();
+
+  // If already logged in, redirect to dashboard immediately
+  useEffect(() => {
+    if (localStorage.getItem("isStaffLoggedIn") === "true") {
+      router.push("/dashboard");
+    }
+  }, [router]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,14 +24,11 @@ export default function Login() {
     // Simulate login response
     setTimeout(() => {
       setIsSubmitting(false);
-      setLoggedInUser(email.split("@")[0]);
+      localStorage.setItem("isStaffLoggedIn", "true");
+      // Notify other components (like Navbar) about login status change
+      window.dispatchEvent(new Event("auth-change"));
+      router.push("/dashboard");
     }, 1000);
-  };
-
-  const handleLogout = () => {
-    setEmail("");
-    setPassword("");
-    setLoggedInUser(null);
   };
 
   return (
@@ -52,80 +57,60 @@ export default function Login() {
           </p>
         </div>
 
-        {loggedInUser ? (
-          <div className="text-center space-y-4 py-4">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-primary">Successfully Authenticated</p>
-              <p className="text-xs text-muted-foreground mt-1">Welcome back, <span className="font-semibold">{loggedInUser}</span>!</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-full inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-primary shadow-sm hover:bg-muted focus:outline-none transition-colors"
-            >
-              Sign Out
-            </button>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="email" className="block text-xs font-semibold text-primary mb-1.5">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="staff@trishulecohomestays.com"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-primary mb-1.5">
-                Email Address
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="password" className="block text-xs font-semibold text-primary">
+                Secret Access Key
               </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="staff@trishulecohomestays.com"
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
-              />
+              <a href="#" className="text-[10px] font-semibold text-accent hover:underline">
+                Forgot Key?
+              </a>
             </div>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
+            />
+          </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="password" className="block text-xs font-semibold text-primary">
-                  Secret Access Key
-                </label>
-                <a href="#" className="text-[10px] font-semibold text-accent hover:underline">
-                  Forgot Key?
-                </a>
-              </div>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/95 focus:outline-none disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Authenticating...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </button>
-          </form>
-        )}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/95 focus:outline-none disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Authenticating...
+              </>
+            ) : (
+              "Sign In"
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
