@@ -1,0 +1,148 @@
+import React from "react";
+
+export default function Dashboard() {
+  const stats = [
+    { name: "Total Reviews Processed", value: "348", change: "+12% this week" },
+    { name: "Average Sentiment Score", value: "4.7 / 5.0", change: "+0.3 points" },
+    { name: "Response Rate (<24h)", value: "98.8%", change: "Within target" },
+    { name: "Primary Booking Source", value: "Booking.com", change: "64% of total reviews" },
+  ];
+
+  const recentReviews = [
+    { date: "June 18, 2026", source: "Airbnb", text: "The Himalayan peaks were visible right from the wooden balcony! Exceeded expectations.", sentiment: "Positive", theme: "Location" },
+    { date: "June 17, 2026", source: "Booking.com", text: "Food was highly delicious and fresh, but room cleaning was done late in the afternoon.", sentiment: "Neutral", theme: "Food" },
+    { date: "June 15, 2026", source: "Google", text: "The hosts treated us like their own family. Extremely warm gestures and local insights.", sentiment: "Positive", theme: "Host" },
+    { date: "June 14, 2026", source: "Airbnb", text: "Water heater wasn't working on the first day, took several hours to fix.", sentiment: "Negative", theme: "Cleanliness" },
+  ];
+
+  const themeCounts = [
+    { name: "Host & Staff", count: 142, percentage: "41%" },
+    { name: "Food & Meals", count: 96, percentage: "28%" },
+    { name: "Location & Views", count: 62, percentage: "18%" },
+    { name: "Cleanliness", count: 32, percentage: "9%" },
+    { name: "Value & Price", count: 16, percentage: "5%" },
+  ];
+
+  return (
+    <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <div className="border-b border-border pb-6">
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Analytics Dashboard</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Real-time insights and satisfaction telemetry for Trishul Eco-Homestays.
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <div key={stat.name} className="overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{stat.name}</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-primary">{stat.value}</p>
+            <p className="mt-2 text-xs font-medium text-accent">{stat.change}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Visual Charts Section */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {/* Sentiment Distribution SVG Chart */}
+        <div className="lg:col-span-7 rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-bold tracking-tight text-primary">Sentiment Trends</h2>
+          <p className="text-xs text-muted-foreground">Weekly distribution of Positive, Neutral, and Negative reviews.</p>
+          
+          {/* Custom SVG Bar Chart */}
+          <div className="mt-6 h-64 w-full flex items-end justify-between gap-4 px-2">
+            <div className="flex-1 flex flex-col items-center h-full justify-end">
+              <div className="w-full bg-green-100 dark:bg-green-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "82%" }}>
+                <div className="bg-primary/80 h-3/4 w-full rounded-t-lg transition-all hover:bg-primary" />
+              </div>
+              <span className="mt-2 text-xs font-semibold text-primary">Positive</span>
+              <span className="text-[10px] text-muted-foreground">285 reviews</span>
+            </div>
+            
+            <div className="flex-1 flex flex-col items-center h-full justify-end">
+              <div className="w-full bg-yellow-100 dark:bg-yellow-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "45%" }}>
+                <div className="bg-amber-500/80 h-2/3 w-full rounded-t-lg transition-all hover:bg-amber-500" />
+              </div>
+              <span className="mt-2 text-xs font-semibold text-primary">Neutral</span>
+              <span className="text-[10px] text-muted-foreground">47 reviews</span>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center h-full justify-end">
+              <div className="w-full bg-red-100 dark:bg-red-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "25%" }}>
+                <div className="bg-red-500/80 h-1/2 w-full rounded-t-lg transition-all hover:bg-red-500" />
+              </div>
+              <span className="mt-2 text-xs font-semibold text-primary">Negative</span>
+              <span className="text-[10px] text-muted-foreground">16 reviews</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Theme Distribution Column */}
+        <div className="lg:col-span-5 rounded-3xl border border-border bg-card p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-primary">Key Guest Themes</h2>
+            <p className="text-xs text-muted-foreground">Main topics mentioned in review text over the past month.</p>
+            
+            <div className="mt-6 space-y-4">
+              {themeCounts.map((theme) => (
+                <div key={theme.name} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-primary">{theme.name}</span>
+                    <span className="text-muted-foreground">{theme.count} mentions ({theme.percentage})</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-primary" style={{ width: theme.percentage }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity Table */}
+      <div className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="text-lg font-bold tracking-tight text-primary">Recently Processed Reviews</h2>
+        <p className="text-xs text-muted-foreground">Historical records of classified feedback logs.</p>
+        
+        <div className="mt-6 overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs md:text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/65 text-primary font-semibold">
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Source</th>
+                <th className="px-4 py-3 w-1/2">Review Text</th>
+                <th className="px-4 py-3">Sentiment</th>
+                <th className="px-4 py-3">Theme</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {recentReviews.map((rev, idx) => (
+                <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3.5 text-muted-foreground font-medium">{rev.date}</td>
+                  <td className="px-4 py-3.5 text-primary font-medium">{rev.source}</td>
+                  <td className="px-4 py-3.5 text-muted-foreground italic">"{rev.text}"</td>
+                  <td className="px-4 py-3.5">
+                    <span
+                      className={`inline-flex items-center rounded px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        rev.sentiment === "Positive"
+                          ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400"
+                          : rev.sentiment === "Neutral"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-400"
+                          : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400"
+                      }`}
+                    >
+                      {rev.sentiment}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-primary font-semibold">#{rev.theme.toLowerCase()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
