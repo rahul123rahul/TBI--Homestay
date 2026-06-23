@@ -3,6 +3,8 @@
 import React, { useState, useRef } from "react";
 import Hero from "@/components/Hero";
 import Card from "@/components/Card";
+import { Button, Loader } from "@/components/ui";
+import { useToast } from "@/components/ui/Toast";
 
 export default function Home() {
   const consoleRef = useRef(null);
@@ -10,6 +12,7 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const toast = useToast();
 
   const scrollToConsole = () => {
     consoleRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -24,6 +27,7 @@ export default function Home() {
       "Awesome experience overall, would definitely come back next summer!"
     ];
     setReviewsInput(samples.join("\n"));
+    toast.info("Sample batch loaded into console.");
   };
 
   const classifyReview = (text) => {
@@ -94,19 +98,23 @@ export default function Home() {
       const analyzed = lines.map(classifyReview).filter(Boolean);
       setResults(analyzed);
       setIsAnalyzing(false);
+      toast.success(`Successfully analyzed ${analyzed.length} reviews.`);
     }, 1200);
   };
 
   const handleCopy = (text, index) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(index);
+    toast.success("Draft response copied to clipboard!");
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   const handleClear = () => {
     setReviewsInput("");
     setResults([]);
+    toast.info("Console input and results cleared.");
   };
+
 
   return (
     <div className="flex-1">
@@ -204,31 +212,23 @@ export default function Home() {
               />
 
               <div className="flex gap-3">
-                <button
-                  type="button"
+                <Button
                   onClick={handleAnalyze}
                   disabled={isAnalyzing || !reviewsInput.trim()}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/95 focus:outline-none disabled:opacity-50"
+                  className="flex-1"
                 >
                   {isAnalyzing ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Analyzing Feedback...
-                    </>
+                    <Loader variant="spinner" size="sm" label="Analyzing Feedback..." className="flex-row gap-2" />
                   ) : (
                     "Analyze Reviews"
                   )}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={handleClear}
-                  className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-primary shadow-sm hover:bg-muted focus:outline-none"
                 >
                   Clear
-                </button>
+                </Button>
               </div>
             </div>
 

@@ -2,12 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Input } from "@/components/ui";
+import { useToast } from "@/components/ui/Toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
+  const toast = useToast();
 
   // If already logged in, redirect to dashboard immediately
   useEffect(() => {
@@ -20,19 +24,27 @@ export default function Login() {
     e.preventDefault();
     if (!email || !password) return;
     setIsSubmitting(true);
+    setError("");
 
-    // Simulate login response
+    // Simulate login response with authentication validation
     setTimeout(() => {
-      setIsSubmitting(false);
-      localStorage.setItem("isStaffLoggedIn", "true");
-      // Notify other components (like Navbar) about login status change
-      window.dispatchEvent(new Event("auth-change"));
-      router.push("/dashboard");
-    }, 1000);
+      if (email === "staff@trishul.com" && password === "staff123") {
+        setIsSubmitting(false);
+        localStorage.setItem("isStaffLoggedIn", "true");
+        // Notify other components (like Navbar) about login status change
+        window.dispatchEvent(new Event("auth-change"));
+        toast.success("Welcome back, staff member!");
+        router.push("/dashboard");
+      } else {
+        setIsSubmitting(false);
+        setError("Invalid email address or access key. Access denied.");
+        toast.error("Access Denied: Invalid email or key.");
+      }
+    }, 800);
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-b from-background via-muted/30 to-background">
+    <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-b from-background via-muted/30 to-background dark:from-background dark:via-muted/10 dark:to-background">
       <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl relative overflow-hidden">
         
         {/* Top green accent gradient slice */}
@@ -51,52 +63,51 @@ export default function Login() {
               <path d="M12 2L2 22h20L12 2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-primary">Staff Portal Access</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-primary dark:text-primary-foreground">Staff Portal Access</h2>
           <p className="mt-1.5 text-xs text-muted-foreground">
             Sign in to access Trishul Eco-Homestays review classifications.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-xs font-semibold text-primary mb-1.5">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="staff@trishulecohomestays.com"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
-            />
-          </div>
+          {error && (
+            <div className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300 text-xs rounded-xl p-3 text-left animate-shake">
+              <span className="font-semibold">Authentication failed: </span>
+              {error}
+            </div>
+          )}
 
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="password" className="block text-xs font-semibold text-primary">
-                Secret Access Key
-              </label>
+          <Input
+            id="email"
+            type="email"
+            label="Email Address"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="staff@trishul.com"
+          />
+
+          <div className="relative">
+            <div className="absolute right-0 top-0 z-10">
               <a href="#" className="text-[10px] font-semibold text-accent hover:underline">
                 Forgot Key?
               </a>
             </div>
-            <input
+            <Input
               id="password"
               type="password"
+              label="Secret Access Key"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
             />
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/95 focus:outline-none disabled:opacity-50"
+            className="w-full mt-2"
           >
             {isSubmitting ? (
               <>
@@ -109,9 +120,10 @@ export default function Login() {
             ) : (
               "Sign In"
             )}
-          </button>
+          </Button>
         </form>
       </div>
     </div>
   );
 }
+

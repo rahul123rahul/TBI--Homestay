@@ -2,11 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Loader, Modal } from "@/components/ui";
+import { useToast } from "@/components/ui/Toast";
 
 export default function Dashboard() {
   const router = useRouter();
+  const toast = useToast();
   const [isAuthorized, setIsAuthorized] = useState(null);
   const [countdown, setCountdown] = useState(3);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Authorization checking
   useEffect(() => {
@@ -38,10 +43,10 @@ export default function Dashboard() {
   ];
 
   const recentReviews = [
-    { date: "June 18, 2026", source: "Airbnb", text: "The Himalayan peaks were visible right from the wooden balcony! Exceeded expectations.", sentiment: "Positive", theme: "Location" },
-    { date: "June 17, 2026", source: "Booking.com", text: "Food was highly delicious and fresh, but room cleaning was done late in the afternoon.", sentiment: "Neutral", theme: "Food" },
-    { date: "June 15, 2026", source: "Google", text: "The hosts treated us like their own family. Extremely warm gestures and local insights.", sentiment: "Positive", theme: "Host" },
-    { date: "June 14, 2026", source: "Airbnb", text: "Water heater wasn't working on the first day, took several hours to fix.", sentiment: "Negative", theme: "Cleanliness" },
+    { id: "1", date: "June 18, 2026", source: "Airbnb", text: "The Himalayan peaks were visible right from the wooden balcony! Exceeded expectations.", sentiment: "Positive", theme: "Location" },
+    { id: "2", date: "June 17, 2026", source: "Booking.com", text: "Food was highly delicious and fresh, but room cleaning was done late in the afternoon.", sentiment: "Neutral", theme: "Food" },
+    { id: "3", date: "June 15, 2026", source: "Google", text: "The hosts treated us like their own family. Extremely warm gestures and local insights.", sentiment: "Positive", theme: "Host" },
+    { id: "4", date: "June 14, 2026", source: "Airbnb", text: "Water heater wasn't working on the first day, took several hours to fix.", sentiment: "Negative", theme: "Cleanliness" },
   ];
 
   const themeCounts = [
@@ -56,10 +61,7 @@ export default function Dashboard() {
   if (isAuthorized === null) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-muted/10 min-h-[50vh]">
-        <div className="animate-pulse flex flex-col items-center gap-3">
-          <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-          <span className="text-sm font-semibold text-muted-foreground">Verifying staff credentials...</span>
-        </div>
+        <Loader variant="spinner" size="lg" label="Verifying staff credentials..." />
       </div>
     );
   }
@@ -98,12 +100,12 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <button
+          <Button
             onClick={() => router.push("/login")}
-            className="w-full inline-flex items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/95 shadow-md transition-all focus:outline-none"
+            className="w-full"
           >
             Go to Sign In
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -201,11 +203,12 @@ export default function Dashboard() {
                 <th className="px-4 py-3 w-1/2">Review Text</th>
                 <th className="px-4 py-3">Sentiment</th>
                 <th className="px-4 py-3">Theme</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {recentReviews.map((rev, idx) => (
-                <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                <tr key={idx} className="hover:bg-muted/30 transition-colors align-middle">
                   <td className="px-4 py-3.5 text-muted-foreground font-medium">{rev.date}</td>
                   <td className="px-4 py-3.5 text-primary font-medium">{rev.source}</td>
                   <td className="px-4 py-3.5 text-muted-foreground italic">"{rev.text}"</td>
@@ -223,12 +226,108 @@ export default function Dashboard() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-primary font-semibold">#{rev.theme.toLowerCase()}</td>
+                  <td className="px-4 py-3.5 text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedReview(rev);
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      Inspect
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Review Inspection Detail"
+      >
+        {selectedReview && (
+          <div className="space-y-5">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Original Guest Feedback</span>
+              <p className="mt-1 text-xs italic text-foreground bg-muted border border-border/40 p-4 rounded-xl">
+                "{selectedReview.text}"
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Sentiment Tag</span>
+                <div className="mt-1">
+                  <span
+                    className={`inline-flex items-center rounded px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      selectedReview.sentiment === "Positive"
+                        ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400"
+                        : selectedReview.sentiment === "Neutral"
+                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-400"
+                        : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400"
+                    }`}
+                  >
+                    {selectedReview.sentiment}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Identified Theme</span>
+                <p className="mt-1 text-sm font-semibold text-primary dark:text-primary-foreground">
+                  #{selectedReview.theme.toLowerCase()}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-border/60 pt-4">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Source Channel</span>
+                <p className="mt-1 text-xs font-semibold text-primary dark:text-primary-foreground">{selectedReview.source}</p>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Submission Date</span>
+                <p className="mt-1 text-xs font-semibold text-primary dark:text-primary-foreground">{selectedReview.date}</p>
+              </div>
+            </div>
+
+            <div className="border-t border-border/60 pt-4">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">AI response recommendation</span>
+              <p className="mt-2 text-xs font-medium text-foreground bg-primary/5 dark:bg-primary/20 border border-primary/10 p-4 rounded-xl leading-relaxed">
+                We appreciate you taking the time to write. Our team at Trishul Eco-Homestays has been notified and we hope to welcome you back again!
+              </p>
+            </div>
+
+            <div className="flex gap-3 border-t border-border/60 pt-6">
+              <Button
+                variant="primary"
+                className="flex-1 text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText("We appreciate you taking the time to write. Our team at Trishul Eco-Homestays has been notified and we hope to welcome you back again!");
+                  toast.success("Copied suggested response signature!");
+                }}
+              >
+                Copy Response
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 text-xs"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  router.push(`/dashboard/review/${selectedReview.id}`);
+                }}
+              >
+                Open Workspace Detail
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +11,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     const checkAuth = () => {
       setIsLoggedIn(localStorage.getItem("isStaffLoggedIn") === "true");
     };
@@ -33,7 +38,10 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    ...(isLoggedIn ? [{ name: "Dashboard", href: "/dashboard" }] : []),
+    ...(isLoggedIn ? [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Settings", href: "/settings" }
+    ] : []),
     { name: "About", href: "/about" },
   ];
 
@@ -99,6 +107,26 @@ export default function Navbar() {
             <span className="text-xs text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full font-medium">
               {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
             </span>
+            
+            {/* Desktop Theme Toggle */}
+            {mounted && (
+              <button
+                onClick={toggleTheme}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-primary hover:bg-muted transition-colors cursor-pointer"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <svg className="h-4.5 w-4.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                  </svg>
+                ) : (
+                  <svg className="h-4.5 w-4.5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+            )}
+
             {isLoggedIn ? (
               <button
                 onClick={handleSignOut}
@@ -171,9 +199,31 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="border-t border-border mt-4 pt-4 px-3 flex flex-col gap-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
+                </span>
+                
+                {/* Mobile Theme Toggle */}
+                {mounted && (
+                  <button
+                    onClick={toggleTheme}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-primary hover:bg-muted transition-colors cursor-pointer"
+                    aria-label="Toggle theme"
+                  >
+                    {theme === "dark" ? (
+                      <svg className="h-4.5 w-4.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4.5 w-4.5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
+
               {isLoggedIn ? (
                 <button
                   onClick={() => {
