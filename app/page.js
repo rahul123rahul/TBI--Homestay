@@ -87,19 +87,42 @@ export default function Home() {
     return { text, sentiment, theme, response };
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!reviewsInput.trim()) return;
     setIsAnalyzing(true);
     setResults([]);
 
-    // Simulate LLM API delay
-    setTimeout(() => {
+    try {
       const lines = reviewsInput.split("\n").filter((l) => l.trim() !== "");
-      const analyzed = lines.map(classifyReview).filter(Boolean);
-      setResults(analyzed);
+      const res = await fetch("http://localhost:5000/api/reviews/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reviews: lines,
+          source: "Console Interface"
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || `Server responded with status ${res.status}`);
+      }
+
+      const resData = await res.json();
+      if (resData.success) {
+        setResults(resData.data);
+        toast.success(`Successfully analyzed ${resData.count} reviews.`);
+      } else {
+        throw new Error(resData.error || "Analysis failed.");
+      }
+    } catch (error) {
+      console.error("API Error in handleAnalyze:", error);
+      toast.error(`Classification error: ${error.message}`);
+    } finally {
       setIsAnalyzing(false);
-      toast.success(`Successfully analyzed ${analyzed.length} reviews.`);
-    }, 1200);
+    }
   };
 
   const handleCopy = (text, index) => {

@@ -55,6 +55,7 @@ export default function ReviewDetail({ params }) {
 
   const [isAuthorized, setIsAuthorized] = useState(null);
   const [review, setReview] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Interactive Overrides state
   const [sentiment, setSentiment] = useState("");
@@ -66,7 +67,7 @@ export default function ReviewDetail({ params }) {
 
   const defaultSignature = "Warm regards, Trishul Eco-Homestays Team";
 
-  // Authorization and mock loading
+  // Fetch individual review from backend
   useEffect(() => {
     const loggedIn = localStorage.getItem("isStaffLoggedIn") === "true";
     setIsAuthorized(loggedIn);
@@ -75,20 +76,78 @@ export default function ReviewDetail({ params }) {
       return;
     }
 
-    const item = mockReviews[id];
-    if (!item) {
-      toast.error("Review record not found.");
-      router.push("/dashboard");
-      return;
-    }
+    const fetchReview = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/reviews/${id}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            toast.error("Review record not found in database.");
+            router.push("/dashboard");
+            return;
+          }
+          throw new Error(`Server responded with status ${res.status}`);
+        }
+        const resData = await res.json();
+        if (resData.success) {
+          setReview(resData.data);
+          setSentiment(resData.data.sentiment);
+          setTheme(resData.data.theme);
+          setDraftResponse(resData.data.response || "");
+        } else {
+          throw new Error(resData.error || "Failed to load review details.");
+        }
+      } catch (err) {
+        console.error("Fetch Review Error:", err);
+        toast.error(`Error loading review: ${err.message}`);
+        router.push("/dashboard");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    setReview(item);
-    setSentiment(item.sentiment);
-    setTheme(item.theme);
-    
-    // Set default draft based on the theme
-    setDraftResponse(getDefaultResponse(item.theme, item.sentiment));
+    fetchReview();
   }, [id, router]);
+
+  const saveReviewChanges = async (updatedFields) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/reviews/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedFields),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || `HTTP error! status: ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.success) {
+        setReview(data.data);
+        if (updatedFields.sentiment) setSentiment(data.data.sentiment);
+        if (updatedFields.theme) setTheme(data.data.theme);
+        if (updatedFields.response !== undefined) setDraftResponse(data.data.response);
+      }
+    } catch (err) {
+      console.error("Save Overrides Error:", err);
+      toast.error(`Failed to save changes: ${err.message}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this review from the database? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/reviews/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(`Delete failed with status ${res.status}`);
+      toast.success("Review deleted successfully!");
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Delete Error:", err);
+      toast.error(`Failed to delete review: ${err.message}`);
+    }
+  };
 
   const getDefaultResponse = (th, sent) => {
     if (th === "Location") {
@@ -111,30 +170,32 @@ export default function ReviewDetail({ params }) {
     setIsRegenerating(true);
     toast.info("Sending prompt overrides to AI Engine...");
     
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsRegenerating(false);
       let newText = getDefaultResponse(theme, sentiment);
       if (promptOverride.trim()) {
         newText = `[AI Custom Response] Thank you for the request. In response to your prompt: "${promptOverride}", we are happy to specify that we will keep improving. ${newText}`;
       }
       setDraftResponse(newText);
-      toast.success("AI draft response updated!");
+      await saveReviewChanges({ response: newText });
+      toast.success("AI draft response updated and saved!");
     }, 1500);
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const finalResponse = appendSignature
       ? `${draftResponse}\n\n${defaultSignature}`
       : draftResponse;
     
     navigator.clipboard.writeText(finalResponse);
-    toast.success("Final response copied to clipboard!");
+    await saveReviewChanges({ response: draftResponse });
+    toast.success("Final response copied and saved to database!");
   };
 
-  if (isAuthorized === null || !review) {
+  if (isAuthorized === null || (isAuthorized && isLoading) || !review) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 min-h-[50vh]">
-        <Loader variant="spinner" size="lg" label="Loading workspace logs..." />
+        <Loader variant="spinner" size="lg" label={isAuthorized === null ? "Verifying staff credentials..." : "Loading review workspace logs..."} />
       </div>
     );
   }
@@ -150,17 +211,29 @@ export default function ReviewDetail({ params }) {
             Analyze, customize classification tags, and draft response templates.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push("/dashboard")}
-          className="self-start md:self-center"
-        >
-          <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Dashboard
-        </Button>
+        <div className="flex gap-2.5 self-start md:self-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/dashboard")}
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            className="border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-950/20"
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete Review
+          </Button>
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -195,9 +268,10 @@ export default function ReviewDetail({ params }) {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setSentiment(s);
-                      toast.info(`Sentiment changed to ${s}`);
+                      await saveReviewChanges({ sentiment: s });
+                      toast.success(`Sentiment updated to ${s}`);
                     }}
                     className={`px-3 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wider text-center transition-all cursor-pointer
                       ${
@@ -225,10 +299,12 @@ export default function ReviewDetail({ params }) {
                   <button
                     key={t}
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setTheme(t);
-                      setDraftResponse(getDefaultResponse(t, sentiment));
-                      toast.info(`Theme changed to #${t.toLowerCase()}`);
+                      const defaultResp = getDefaultResponse(t, sentiment);
+                      setDraftResponse(defaultResp);
+                      await saveReviewChanges({ theme: t, response: defaultResp });
+                      toast.success(`Theme updated to #${t.toLowerCase()}`);
                     }}
                     className={`px-3 py-2 rounded-xl border text-xs font-semibold text-center transition-all cursor-pointer
                       ${

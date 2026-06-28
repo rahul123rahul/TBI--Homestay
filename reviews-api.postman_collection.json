@@ -1,0 +1,257 @@
+{
+  "info": {
+    "_postman_id": "8b5a7cf1-d419-4b4f-8f83-9b88939c36fd",
+    "name": "Trishul Eco-Homestays Reviews API",
+    "description": "Postman API test collection for Trishul Eco-Homestays review classifier backend endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List All Reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/reviews",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Reviews with Sentiment Filter",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/reviews?sentiment=Positive",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews"
+          ],
+          "query": [
+            {
+              "key": "sentiment",
+              "value": "Positive"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Search Reviews",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/reviews/search?q=balcony",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "balcony"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Dashboard Telemetry Stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/reviews/stats",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews",
+            "stats"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Single Review Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/reviews/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create a New Review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"The Himalayan peaks were outstanding, but the washroom was a bit dusty.\",\n  \"source\": \"Airbnb\",\n  \"date\": \"June 19, 2026\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/reviews",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Batch Analyze and Save Reviews",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reviews\": [\n    \"Lovely local organic dinner, best Kumaoni dishes!\",\n    \"The caretaker was rude and the bathroom was cold.\"\n  ],\n  \"source\": \"Postman Console Upload\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/reviews/analyze",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews",
+            "analyze"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update/Override Review Tag Details",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sentiment\": \"Positive\",\n  \"theme\": \"Food\",\n  \"response\": \"Thank you! We are glad you loved our home-cooked meals.\",\n  \"score\": 90\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/reviews/2",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews",
+            "2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Review",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/reviews/4",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "reviews",
+            "4"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

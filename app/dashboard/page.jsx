@@ -13,7 +13,13 @@ export default function Dashboard() {
   const [selectedReview, setSelectedReview] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Authorization checking
+  const [stats, setStats] = useState([]);
+  const [recentReviews, setRecentReviews] = useState([]);
+  const [themeCounts, setThemeCounts] = useState([]);
+  const [sentiments, setSentiments] = useState({ Positive: 0, Neutral: 0, Negative: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Authorization checking and backend fetch
   useEffect(() => {
     const loggedIn = localStorage.getItem("isStaffLoggedIn") === "true";
     setIsAuthorized(loggedIn);
@@ -32,36 +38,41 @@ export default function Dashboard() {
       }, 1000);
 
       return () => clearInterval(interval);
+    } else {
+      const fetchTelemetry = async () => {
+        try {
+          const statsRes = await fetch("http://localhost:5000/api/reviews/stats");
+          if (!statsRes.ok) throw new Error(`Stats endpoint responded with status ${statsRes.status}`);
+          const statsData = await statsRes.json();
+
+          const reviewsRes = await fetch("http://localhost:5000/api/reviews");
+          if (!reviewsRes.ok) throw new Error(`Reviews endpoint responded with status ${reviewsRes.status}`);
+          const reviewsData = await reviewsRes.json();
+
+          if (statsData.success && reviewsData.success) {
+            setStats(statsData.stats);
+            setThemeCounts(statsData.themeCounts);
+            setSentiments(statsData.sentiments);
+            setRecentReviews(reviewsData.data);
+          } else {
+            throw new Error("Invalid API response format");
+          }
+        } catch (error) {
+          console.error("Failed to load telemetry:", error);
+          toast.error(`Telemetry error: ${error.message}`);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTelemetry();
     }
   }, [router]);
 
-  const stats = [
-    { name: "Total Reviews Processed", value: "348", change: "+12% this week" },
-    { name: "Average Sentiment Score", value: "4.7 / 5.0", change: "+0.3 points" },
-    { name: "Response Rate (<24h)", value: "98.8%", change: "Within target" },
-    { name: "Primary Booking Source", value: "Booking.com", change: "64% of total reviews" },
-  ];
-
-  const recentReviews = [
-    { id: "1", date: "June 18, 2026", source: "Airbnb", text: "The Himalayan peaks were visible right from the wooden balcony! Exceeded expectations.", sentiment: "Positive", theme: "Location" },
-    { id: "2", date: "June 17, 2026", source: "Booking.com", text: "Food was highly delicious and fresh, but room cleaning was done late in the afternoon.", sentiment: "Neutral", theme: "Food" },
-    { id: "3", date: "June 15, 2026", source: "Google", text: "The hosts treated us like their own family. Extremely warm gestures and local insights.", sentiment: "Positive", theme: "Host" },
-    { id: "4", date: "June 14, 2026", source: "Airbnb", text: "Water heater wasn't working on the first day, took several hours to fix.", sentiment: "Negative", theme: "Cleanliness" },
-  ];
-
-  const themeCounts = [
-    { name: "Host & Staff", count: 142, percentage: "41%" },
-    { name: "Food & Meals", count: 96, percentage: "28%" },
-    { name: "Location & Views", count: 62, percentage: "18%" },
-    { name: "Cleanliness", count: 32, percentage: "9%" },
-    { name: "Value & Price", count: 16, percentage: "5%" },
-  ];
-
   // Loading state
-  if (isAuthorized === null) {
+  if (isAuthorized === null || (isAuthorized && isLoading)) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 bg-muted/10 min-h-[50vh]">
-        <Loader variant="spinner" size="lg" label="Verifying staff credentials..." />
+        <Loader variant="spinner" size="lg" label={isAuthorized === null ? "Verifying staff credentials..." : "Loading telemetry from backend..."} />
       </div>
     );
   }
@@ -111,6 +122,11 @@ export default function Dashboard() {
     );
   }
 
+  const maxSent = Math.max(sentiments.Positive || 0, sentiments.Neutral || 0, sentiments.Negative || 0, 1);
+  const posHeight = `${((sentiments.Positive || 0) / maxSent) * 75 + 15}%`;
+  const neutHeight = `${((sentiments.Neutral || 0) / maxSent) * 75 + 15}%`;
+  const negHeight = `${((sentiments.Negative || 0) / maxSent) * 75 + 15}%`;
+
   // Render Authorized Dashboard
   return (
     <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
@@ -141,27 +157,27 @@ export default function Dashboard() {
           
           <div className="mt-6 h-64 w-full flex items-end justify-between gap-4 px-2">
             <div className="flex-1 flex flex-col items-center h-full justify-end">
-              <div className="w-full bg-green-100 dark:bg-green-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "82%" }}>
-                <div className="bg-primary/80 h-3/4 w-full rounded-t-lg transition-all hover:bg-primary" />
+              <div className="w-full bg-green-100 dark:bg-green-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: posHeight }}>
+                <div className="bg-primary/80 h-full w-full rounded-t-lg transition-all hover:bg-primary" />
               </div>
               <span className="mt-2 text-xs font-semibold text-primary">Positive</span>
-              <span className="text-[10px] text-muted-foreground">285 reviews</span>
+              <span className="text-[10px] text-muted-foreground">{sentiments.Positive || 0} reviews</span>
             </div>
             
             <div className="flex-1 flex flex-col items-center h-full justify-end">
-              <div className="w-full bg-yellow-100 dark:bg-yellow-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "45%" }}>
-                <div className="bg-amber-500/80 h-2/3 w-full rounded-t-lg transition-all hover:bg-amber-500" />
+              <div className="w-full bg-yellow-100 dark:bg-yellow-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: neutHeight }}>
+                <div className="bg-amber-500/80 h-full w-full rounded-t-lg transition-all hover:bg-amber-500" />
               </div>
               <span className="mt-2 text-xs font-semibold text-primary">Neutral</span>
-              <span className="text-[10px] text-muted-foreground">47 reviews</span>
+              <span className="text-[10px] text-muted-foreground">{sentiments.Neutral || 0} reviews</span>
             </div>
 
             <div className="flex-1 flex flex-col items-center h-full justify-end">
-              <div className="w-full bg-red-100 dark:bg-red-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: "25%" }}>
-                <div className="bg-red-500/80 h-1/2 w-full rounded-t-lg transition-all hover:bg-red-500" />
+              <div className="w-full bg-red-100 dark:bg-red-950/40 rounded-t-lg flex flex-col justify-end overflow-hidden" style={{ height: negHeight }}>
+                <div className="bg-red-500/80 h-full w-full rounded-t-lg transition-all hover:bg-red-500" />
               </div>
               <span className="mt-2 text-xs font-semibold text-primary">Negative</span>
-              <span className="text-[10px] text-muted-foreground">16 reviews</span>
+              <span className="text-[10px] text-muted-foreground">{sentiments.Negative || 0} reviews</span>
             </div>
           </div>
         </div>
@@ -299,7 +315,7 @@ export default function Dashboard() {
             <div className="border-t border-border/60 pt-4">
               <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">AI response recommendation</span>
               <p className="mt-2 text-xs font-medium text-foreground bg-primary/5 dark:bg-primary/20 border border-primary/10 p-4 rounded-xl leading-relaxed">
-                We appreciate you taking the time to write. Our team at Trishul Eco-Homestays has been notified and we hope to welcome you back again!
+                {selectedReview.response || "No suggested response template."}
               </p>
             </div>
 
@@ -308,8 +324,8 @@ export default function Dashboard() {
                 variant="primary"
                 className="flex-1 text-xs"
                 onClick={() => {
-                  navigator.clipboard.writeText("We appreciate you taking the time to write. Our team at Trishul Eco-Homestays has been notified and we hope to welcome you back again!");
-                  toast.success("Copied suggested response signature!");
+                  navigator.clipboard.writeText(selectedReview.response || "");
+                  toast.success("Copied suggested response to clipboard!");
                 }}
               >
                 Copy Response
