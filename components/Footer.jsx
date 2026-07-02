@@ -10,7 +10,7 @@ export default function Footer() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedCount = localStorage.getItem("tbi_visitor_cnt");
-      const startCount = storedCount ? parseInt(storedCount, 10) : 1240;
+      const startCount = storedCount ? parseInt(storedCount, 10) : 0;
       const newCount = startCount + 1;
       localStorage.setItem("tbi_visitor_cnt", newCount);
       setVisitorCount(newCount);
