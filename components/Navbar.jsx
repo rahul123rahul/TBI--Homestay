@@ -8,6 +8,7 @@ import { useTheme } from "@/components/ThemeProvider";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState("Staff");
   const pathname = usePathname();
   const router = useRouter();
 
@@ -17,7 +18,11 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
     const checkAuth = () => {
-      setIsLoggedIn(localStorage.getItem("isStaffLoggedIn") === "true");
+      const logged = localStorage.getItem("isStaffLoggedIn") === "true";
+      setIsLoggedIn(logged);
+      if (logged) {
+        setUserRole(localStorage.getItem("userRole") || "Staff");
+      }
     };
 
     // Initial check
@@ -32,14 +37,22 @@ export default function Navbar() {
 
   const handleSignOut = () => {
     localStorage.removeItem("isStaffLoggedIn");
+    localStorage.removeItem("userRole");
     window.dispatchEvent(new Event("auth-change"));
     router.push("/");
   };
 
+  const getDashboardHref = () => {
+    if (userRole === "Owner") return "/dashboard/owner";
+    if (userRole === "Admin") return "/dashboard/admin";
+    return "/dashboard";
+  };
+
   const navLinks = [
     { name: "Home", href: "/" },
+    { name: "Reviews Classifier", href: "/classifier" },
     ...(isLoggedIn ? [
-      { name: "Dashboard", href: "/dashboard" },
+      { name: "Dashboard", href: getDashboardHref() },
       { name: "Settings", href: "/settings" }
     ] : []),
     { name: "About", href: "/about" },
@@ -105,7 +118,7 @@ export default function Navbar() {
           {/* Profile/Menu Icon on the Right */}
           <div className="hidden md:flex items-center gap-4">
             <span className="text-xs text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full font-medium">
-              {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
+              {isLoggedIn ? `${userRole} Portal (Active)` : "Staff Portal (Offline)"}
             </span>
             
             {/* Desktop Theme Toggle */}
@@ -201,7 +214,7 @@ export default function Navbar() {
             <div className="border-t border-border mt-4 pt-4 px-3 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">
-                  {isLoggedIn ? "Staff Portal (Active)" : "Staff Portal (Offline)"}
+                  {isLoggedIn ? `${userRole} Portal (Active)` : "Staff Portal (Offline)"}
                 </span>
                 
                 {/* Mobile Theme Toggle */}

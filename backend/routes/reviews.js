@@ -7,7 +7,10 @@ import {
   bulkAnalyzeReviews,
   updateReview,
   deleteReview,
-  getStats
+  getStats,
+  voteHelpful,
+  reportReview,
+  translateReview
 } from "../controllers/reviewsController.js";
 
 const router = express.Router();
@@ -23,5 +26,8 @@ router.post("/reviews", createReview);
 router.get("/reviews/:id", getReviewById);
 router.put("/reviews/:id", updateReview);
 router.delete("/reviews/:id", deleteReview);
+router.post("/reviews/:id/vote", voteHelpful);
+router.post("/reviews/:id/report", reportReview);
+router.get("/reviews/:id/translate", translateReview);
 
 export default router;

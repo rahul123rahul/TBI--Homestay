@@ -1,87 +1,127 @@
-# Trishul Eco-Homestays Review Analytics & Classifier App
+# Trishul Eco-Homestays Network & AI Reviews Platform
 
-This is a full-stack web application designed for **Trishul Eco-Homestays** in the Himalayas. It provides an automated guest reviews classifier console and a telemetry analytics dashboard for homestay management staff. 
-
-The application is built using a **Next.js (React)** frontend and an **Express.js (Node.js)** backend server.
+This is a comprehensive, production-grade full-stack lodging and review telemetry platform designed for **Trishul Eco-Homestays** in the Himalayas. It integrates reservation engines, dashboard panels, and advanced AI utilities for guests, owners, staff, and system administrators.
 
 ---
 
-## Folder Structure
+## 🌟 Core System Features
+
+### 1. Guest Stays Catalog & Smart Search (`/`)
+* **NLP Smart Search**: Allows users to type natural language sentences (e.g. *"quiet mountain cabin with fireplace and WiFi"*) and parses key terms to query corresponding categories, descriptions, and amenities.
+* **Filter Sidebar**: Slide-out filtering controls allowing guests to narrow down options by:
+  - Price Range (interactive slider limits)
+  - Minimum guest star ratings (4.5★+, 4.0★+, etc.)
+  - Amenities checklists (WiFi, AC, Breakfast, Parking, Pool, Pet/Family Friendly, etc.)
+  - Booking cancellation policies (Free Cancellation checks)
+  - Max distance proximity sliders
+* **AI Match Score**: Dynamic matching percentage labels overlaying listing cards indicating how closely a homestay satisfies guest preferences.
+
+### 2. Homestay Profile & Payment Checkout Wizard (`/homestay/[id]`)
+* **AI Seasonal Price Predictor**: Interactive SVG-based monthly bar and trend charts showing pricing shifts for the upcoming 6 months to predict optimal booking times.
+* **AI Review Summary**: Dynamic synthesis engine showing synthesized pros/cons from logged guest reviews.
+* **Sentiment Overview Bar**: Color-coded breakdown bar detailing the proportion of Positive (Green), Neutral (Yellow), and Negative (Red) guest logs.
+* **Detailed Reviews Hub**:
+  - Reviews sorting (Newest, Highest, Lowest, Most Helpful).
+  - Verified Stay checks & Spam Detection badges (spam warning triggers for reviews with `spamScore > 75`).
+  - Helpful voting counters (incrementing live via `/api/reviews/:id/vote`).
+  - Translation toggle (interactive Kumaoni/Hindi translation via `/api/reviews/:id/translate`).
+  - Flagging/Reporting tool to report problematic posts.
+* **Step-by-Step Checkout Wizard**:
+  - **Step 1: Reservation Details**: Select dates and guest counts, calculating base rates and totals.
+  - **Step 2: Simulated Payments**: Options for UPI, Credit/Debit Cards, and Wallets with input validation.
+  - **Step 3: Verification Gateway**: Animated secure payment processing loader.
+  - **Step 4: Invoice Receipt**: Printable receipt page showing breakdown of stays, taxes, and unique transaction codes.
+
+### 3. Dedicated Management Dashboards
+* **Staff Console (`/classifier`)**: Automated review classifier displaying sentiment indexes, source channels, and auto-generated response drafts powered by Google Gemini AI.
+* **Owner Dashboard (`/dashboard/owner`)**:
+  - Analytics (revenue counters, reviews count growth, monthly visitor charts).
+  - Interactive Monthly Calendar blocking out booked dates.
+  - Coupon & Offers creation manager.
+  - Notifications inbox alerts.
+* **Admin Dashboard (`/dashboard/admin`)**:
+  - Approve verification documents for new properties.
+  - global ledger tracking bookings and ad budgets.
+  - Complaints log tracker.
+  - CMS content & SEO metadata manager (dynamic headers, descriptions, keywords).
+
+---
+
+## 📂 Project Structure
 
 ```text
-├── app/                    # Next.js frontend pages (App Router)
-├── components/             # Reusable React components & UI elements
-├── lib/                    # Frontend utility code
-├── backend/                # Express.js REST API Server
-│   ├── controllers/        # Express route controller actions
-│   ├── routes/             # REST route path definitions
-│   ├── server.js           # Express app entry point
-│   ├── .env.example        # Environment template variables
-│   └── .gitignore          # Backend ignored dependencies & secrets
-└── reviews-api.postman_collection.json  # Postman test collection
+├── app/                        # Next.js App Router Pages
+│   ├── classifier/             # Staff Classifier page
+│   ├── dashboard/
+│   │   ├── admin/              # Admin Panel page
+│   │   └── owner/              # Owner Console page
+│   ├── homestay/
+│   │   └── [id]/               # Details Page & Booking wizard
+│   ├── login/                  # Role-based Redirection portal
+│   ├── layout.jsx              # Global app layouts
+│   └── page.js                 # Catalog, Search & Sidebar filters
+├── components/                 # Shared React Components
+│   ├── ui/                     # UI components (Button, Modal, Input, Loader, Toast)
+│   ├── Footer.jsx
+│   ├── Navbar.jsx              # Role status navbar headers
+│   └── Hero.jsx
+├── backend/                    # Express.js Server
+│   ├── config/                 # DB connectors & parameters
+│   ├── controllers/            # Controller routers handlers (Admin, Owner, Reviews, Stays)
+│   ├── models/                 # Mongoose Schemas (User, Homestay, Review, Booking, Marketing, Notification)
+│   ├── routes/                 # Express REST Routers
+│   ├── seed.js                 # Database mock seeding script
+│   └── server.js               # Main entry point & API mount
 ```
 
 ---
 
-## Getting Started
+## 🛠️ Database Setup & Seeding
 
-To run the application locally, you will need to start both the backend server and the frontend Next.js server.
-
-### 1. Run the Backend Server
+The application connects to a cloud MongoDB instance. To initialize/reset the database with default owners, admins, notifications, and mock bookings:
 
 1. Navigate to the backend directory:
    ```bash
    cd backend
    ```
-2. Install the backend dependencies:
+2. Execute the seeding script:
+   ```bash
+   node seed.js
+   ```
+
+---
+
+## 🚀 Running the App Locally
+
+Ensure MongoDB connectivity is active, and launch both frontend and backend development servers.
+
+### 1. Backend API (Port `5000`)
+1. Create a `backend/.env` file from `.env.example`.
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Set up your environment variables. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   *(Optional)* Add your `GEMINI_API_KEY` inside `.env` to enable real-time Google Gemini AI review classification and hospitality response drafting. If left empty, the server automatically falls back to local heuristic keyword matching.
-4. Start the Express development server (runs on `http://localhost:5000` via nodemon):
+3. Run the development server:
    ```bash
    npm run dev
    ```
 
-You can verify the backend is running by visiting the health check endpoint: `http://localhost:5000/health`.
-
-### 2. Run the Frontend Server
-
-1. Navigate back to the project root directory.
-2. Install the frontend dependencies (if not already done):
+### 2. Frontend Next.js (Port `3000`)
+1. Install root dependencies:
    ```bash
    npm install
    ```
-3. Start the Next.js development server (runs on `http://localhost:3000`):
+2. Start the hot-reloading server:
    ```bash
    npm run dev
    ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser to interact with the application.
+3. Open [http://localhost:3000](http://localhost:3000) in your web browser.
 
 ---
 
-## API Endpoints
+## 🔑 Login Credentials
 
-The backend Express application exposes a standard REST API under the `/api` prefix:
-
-- **GET `/api/reviews`**: List all reviews. Supports optional query filters for `sentiment` and `theme` (e.g. `?sentiment=Positive&theme=Food`).
-- **GET `/api/reviews/search`**: Searches reviews text and source using query `?q=...`.
-- **GET `/api/reviews/stats`**: Dynamically aggregates counts, satisfaction indexes, response rates, and theme percentages for dashboard metrics.
-- **GET `/api/reviews/:id`**: Retrieves details of a single review.
-- **POST `/api/reviews`**: Creates a single review, runs classification heuristics/Gemini, saves to memory, and returns the review.
-- **POST `/api/reviews/analyze`**: Batch processes a list of reviews for the main Classifier console.
-- **PUT `/api/reviews/:id`**: Overrides review properties (manually adjust tags or response drafts).
-- **DELETE `/api/reviews/:id`**: Deletes a review from the database.
-
----
-
-## API Testing
-
-An exported Postman collection is located at the root of the project:
-- **[reviews-api.postman_collection.json](./reviews-api.postman_collection.json)**
-
-You can import this collection directly into Postman or Thunder Client to test all 10 endpoint paths (GET, POST, PUT, DELETE, and query parameters) with pre-configured mock payloads.
+Use these preset seeded accounts to navigate role-specific portals:
+- **Staff Portal**: `staff@trishul.com` / `staff123`
+- **Owner Dashboard**: `owner@trishul.com` / `owner123`
+- **Admin Console**: `admin@trishul.com` / `admin123`

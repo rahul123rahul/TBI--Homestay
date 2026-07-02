@@ -13,10 +13,17 @@ export default function Login() {
   const router = useRouter();
   const toast = useToast();
 
-  // If already logged in, redirect to dashboard immediately
+  // If already logged in, redirect to appropriate dashboard immediately
   useEffect(() => {
     if (localStorage.getItem("isStaffLoggedIn") === "true") {
-      router.push("/dashboard");
+      const role = localStorage.getItem("userRole");
+      if (role === "Owner") {
+        router.push("/dashboard/owner");
+      } else if (role === "Admin") {
+        router.push("/dashboard/admin");
+      } else {
+        router.push("/dashboard");
+      }
     }
   }, [router]);
 
@@ -31,10 +38,24 @@ export default function Login() {
       if (email === "staff@trishul.com" && password === "staff123") {
         setIsSubmitting(false);
         localStorage.setItem("isStaffLoggedIn", "true");
-        // Notify other components (like Navbar) about login status change
+        localStorage.setItem("userRole", "Staff");
         window.dispatchEvent(new Event("auth-change"));
         toast.success("Welcome back, staff member!");
         router.push("/dashboard");
+      } else if (email === "owner@trishul.com" && password === "owner123") {
+        setIsSubmitting(false);
+        localStorage.setItem("isStaffLoggedIn", "true");
+        localStorage.setItem("userRole", "Owner");
+        window.dispatchEvent(new Event("auth-change"));
+        toast.success("Welcome, Devendra Singh (Owner)!");
+        router.push("/dashboard/owner");
+      } else if (email === "admin@trishul.com" && password === "admin123") {
+        setIsSubmitting(false);
+        localStorage.setItem("isStaffLoggedIn", "true");
+        localStorage.setItem("userRole", "Admin");
+        window.dispatchEvent(new Event("auth-change"));
+        toast.success("Welcome to Admin Console!");
+        router.push("/dashboard/admin");
       } else {
         setIsSubmitting(false);
         setError("Invalid email address or access key. Access denied.");

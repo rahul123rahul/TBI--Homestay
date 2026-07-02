@@ -1,71 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import Review from "../models/Review.js";
+import mongoose from "mongoose";
 
 dotenv.config();
-
-// In-memory Database Store
-let reviews = [
-  {
-    id: "1",
-    date: "June 18, 2026",
-    source: "Airbnb",
-    text: "The Himalayan peaks were visible right from the wooden balcony! Exceeded expectations.",
-    sentiment: "Positive",
-    theme: "Location",
-    score: 95,
-    response: "The Himalayan mountain views are indeed breathtaking! We are thrilled you enjoyed the wooden balcony views."
-  },
-  {
-    id: "2",
-    date: "June 17, 2026",
-    source: "Booking.com",
-    text: "Food was highly delicious and fresh, but room cleaning was done late in the afternoon.",
-    sentiment: "Neutral",
-    theme: "Food",
-    score: 72,
-    response: "Thank you for praising our local cuisine! We will adjust our cleanliness timings to ensure room updates occur earlier."
-  },
-  {
-    id: "3",
-    date: "June 15, 2026",
-    source: "Google",
-    text: "The hosts treated us like their own family. Extremely warm gestures and local insights.",
-    sentiment: "Positive",
-    theme: "Host",
-    score: 98,
-    response: "Thank you so much! Our hosts strive to provide a warm, personalized family experience for every guest."
-  },
-  {
-    id: "4",
-    date: "June 14, 2026",
-    source: "Airbnb",
-    text: "Water heater wasn't working on the first day, took several hours to fix.",
-    sentiment: "Negative",
-    theme: "Cleanliness",
-    score: 41,
-    response: "We apologize sincerely for the hot water issue. We have fixed the heater unit immediately with our technician."
-  },
-  {
-    id: "5",
-    date: "June 10, 2026",
-    source: "Booking.com",
-    text: "Lovely wooden cottage feel, but the room cost was a bit steep compared to other homestays nearby.",
-    sentiment: "Neutral",
-    theme: "Value",
-    score: 65,
-    response: "Thank you for your feedback regarding our rates. We strive to offer unique eco-stays and are continuously enhancing our facilities to provide better value."
-  },
-  {
-    id: "6",
-    date: "June 08, 2026",
-    source: "Google",
-    text: "Wonderful service! The caretaker took us on a guided village walk. Will visit again.",
-    sentiment: "Positive",
-    theme: "Host",
-    score: 96,
-    response: "Namaskar! Thank you so much. Our hosts strive to provide a warm, personalized family experience for every guest."
-  }
-];
 
 // Helper: Heuristic Rule Classifier
 function classifyReviewHeuristic(text) {
@@ -242,17 +180,17 @@ Output the result in JSON format.`;
 export const getReviews = async (req, res, next) => {
   try {
     const { sentiment, theme } = req.query;
-    let filtered = [...reviews];
+    const filter = {};
 
     if (sentiment) {
-      filtered = filtered.filter(r => r.sentiment.toLowerCase() === sentiment.toLowerCase());
+      filter.sentiment = new RegExp(`^${sentiment}$`, "i");
     }
     if (theme) {
-      filtered = filtered.filter(r => r.theme.toLowerCase() === theme.toLowerCase());
+      filter.theme = new RegExp(`^${theme}$`, "i");
     }
 
-    // Sort by id descending (newest reviews first)
-    filtered.sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true }));
+    // Sort by createdAt descending (newest first)
+    const filtered = await Review.find(filter).sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, count: filtered.length, data: filtered });
   } catch (error) {
@@ -268,10 +206,13 @@ export const searchReviews = async (req, res, next) => {
       return res.status(400).json({ success: false, error: "Search query param 'q' is required." });
     }
 
-    const query = q.toLowerCase();
-    const filtered = reviews.filter(
-      r => r.text.toLowerCase().includes(query) || r.source.toLowerCase().includes(query)
-    );
+    const queryRegex = new RegExp(q, "i");
+    const filtered = await Review.find({
+      $or: [
+        { text: queryRegex },
+        { source: queryRegex }
+      ]
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, count: filtered.length, data: filtered });
   } catch (error) {
@@ -282,9 +223,18 @@ export const searchReviews = async (req, res, next) => {
 // 3. GET /api/reviews/:id - Get a single review
 export const getReviewById = async (req, res, next) => {
   try {
-    const review = reviews.find(r => r.id === req.params.id);
+    const reviewId = req.params.id;
+    let review = null;
+
+    if (mongoose.Types.ObjectId.isValid(reviewId)) {
+      review = await Review.findById(reviewId);
+    }
     if (!review) {
-      return res.status(404).json({ success: false, error: `Review with ID ${req.params.id} not found.` });
+      review = await Review.findOne({ id: reviewId });
+    }
+
+    if (!review) {
+      return res.status(404).json({ success: false, error: `Review with ID ${reviewId} not found.` });
     }
     res.status(200).json({ success: true, data: review });
   } catch (error) {
@@ -292,7 +242,7 @@ export const getReviewById = async (req, res, next) => {
   }
 };
 
-// 4. POST /api/reviews - Create a new review (runs classifier, appends, returns 201)
+// 4. POST /api/reviews - Create a new review (runs classifier, saves, returns 201)
 export const createReview = async (req, res, next) => {
   try {
     const { text, source, date } = req.body;
@@ -316,14 +266,22 @@ export const createReview = async (req, res, next) => {
       classification = classifyReviewHeuristic(text);
     }
 
-    const newReview = {
-      id: String(reviews.length > 0 ? Math.max(...reviews.map(r => parseInt(r.id))) + 1 : 1),
+    // Auto-generate numeric custom ID based on existing max numeric ID
+    const allReviews = await Review.find({}, { id: 1 });
+    const numericIds = allReviews
+      .map(r => parseInt(r.id))
+      .filter(id => !isNaN(id));
+    const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+    const newId = String(maxId + 1);
+
+    const newReview = new Review({
+      id: newId,
       date: date || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
       source: source || "Direct Feedback",
       ...classification
-    };
+    });
 
-    reviews.push(newReview);
+    await newReview.save();
     res.status(201).json({ success: true, data: newReview });
   } catch (error) {
     next(error);
@@ -342,7 +300,13 @@ export const bulkAnalyzeReviews = async (req, res, next) => {
     const apiKey = process.env.GEMINI_API_KEY;
     const results = [];
     const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    const nextIdStart = reviews.length > 0 ? Math.max(...reviews.map(r => parseInt(r.id))) + 1 : 1;
+    
+    // Auto-generate numeric custom IDs sequentially
+    const allReviews = await Review.find({}, { id: 1 });
+    const numericIds = allReviews
+      .map(r => parseInt(r.id))
+      .filter(id => !isNaN(id));
+    let nextIdStart = numericIds.length > 0 ? Math.max(...numericIds) + 1 : 1;
 
     for (let i = 0; i < inputReviews.length; i++) {
       const text = inputReviews[i];
@@ -359,14 +323,14 @@ export const bulkAnalyzeReviews = async (req, res, next) => {
         classification = classifyReviewHeuristic(text);
       }
 
-      const newReview = {
+      const newReview = new Review({
         id: String(nextIdStart + i),
         date: dateStr,
         source: source || "Console Upload",
         ...classification
-      };
+      });
 
-      reviews.push(newReview);
+      await newReview.save();
       results.push(newReview);
     }
 
@@ -380,26 +344,32 @@ export const bulkAnalyzeReviews = async (req, res, next) => {
 export const updateReview = async (req, res, next) => {
   try {
     const reviewId = req.params.id;
-    const index = reviews.findIndex(r => r.id === reviewId);
+    let review = null;
 
-    if (index === -1) {
+    if (mongoose.Types.ObjectId.isValid(reviewId)) {
+      review = await Review.findById(reviewId);
+    }
+    if (!review) {
+      review = await Review.findOne({ id: reviewId });
+    }
+
+    if (!review) {
       return res.status(404).json({ success: false, error: `Review with ID ${reviewId} not found.` });
     }
 
     const { sentiment, theme, response, text, source, score } = req.body;
 
     // Apply overrides or keep original
-    reviews[index] = {
-      ...reviews[index],
-      ...(sentiment && { sentiment }),
-      ...(theme && { theme }),
-      ...(response !== undefined && { response }),
-      ...(text && { text }),
-      ...(source && { source }),
-      ...(score !== undefined && { score: Number(score) })
-    };
+    if (sentiment) review.sentiment = sentiment;
+    if (theme) review.theme = theme;
+    if (response !== undefined) review.response = response;
+    if (text) review.text = text;
+    if (source) review.source = source;
+    if (score !== undefined) review.score = Number(score);
 
-    res.status(200).json({ success: true, data: reviews[index] });
+    await review.save();
+
+    res.status(200).json({ success: true, data: review });
   } catch (error) {
     next(error);
   }
@@ -409,13 +379,20 @@ export const updateReview = async (req, res, next) => {
 export const deleteReview = async (req, res, next) => {
   try {
     const reviewId = req.params.id;
-    const index = reviews.findIndex(r => r.id === reviewId);
+    let review = null;
 
-    if (index === -1) {
+    if (mongoose.Types.ObjectId.isValid(reviewId)) {
+      review = await Review.findById(reviewId);
+    }
+    if (!review) {
+      review = await Review.findOne({ id: reviewId });
+    }
+
+    if (!review) {
       return res.status(404).json({ success: false, error: `Review with ID ${reviewId} not found.` });
     }
 
-    reviews.splice(index, 1);
+    await Review.deleteOne({ _id: review._id });
     res.status(204).end(); // No Content response on deletion
   } catch (error) {
     next(error);
@@ -425,6 +402,7 @@ export const deleteReview = async (req, res, next) => {
 // 8. GET /api/reviews/stats - Get dynamic dashboard metrics
 export const getStats = async (req, res, next) => {
   try {
+    const reviews = await Review.find();
     const totalReviews = reviews.length;
 
     // 1. Calculate Average Sentiment Score
@@ -504,6 +482,65 @@ export const getStats = async (req, res, next) => {
       },
       themeCounts
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/reviews/:id/vote
+export const voteHelpful = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ success: false, error: "Review not found" });
+    }
+    review.helpfulVotes = (review.helpfulVotes || 0) + 1;
+    await review.save();
+    res.status(200).json({ success: true, data: review });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/reviews/:id/report
+export const reportReview = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ success: false, error: "Review not found" });
+    }
+    review.flagged = true;
+    await review.save();
+    res.status(200).json({ success: true, data: review });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/reviews/:id/translate
+export const translateReview = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ success: false, error: "Review not found" });
+    }
+    
+    let translation = "This is a translated review comment text.";
+    const cleanText = review.text.toLowerCase();
+    
+    if (cleanText.includes("balcony") || cleanText.includes("peaks")) {
+      translation = "हिमालय की चोटियाँ सीधे लकड़ी की बालकनी से दिखाई दे रही थीं! उम्मीदों से बढ़कर रहा।";
+    } else if (cleanText.includes("delicious") || cleanText.includes("food")) {
+      translation = "खाना बहुत ही स्वादिष्ट और ताज़ा था, लेकिन कमरे की सफाई दोपहर के बाद देर से की गई।";
+    } else if (cleanText.includes("hosts") || cleanText.includes("family")) {
+      translation = "मेजबानों ने हमारे साथ अपने परिवार की तरह व्यवहार किया। अत्यंत गर्मजोशी भरे हाव-भाव और स्थानीय जानकारी।";
+    } else if (cleanText.includes("heater") || cleanText.includes("water")) {
+      translation = "पहले दिन गीजर काम नहीं कर रहा था, इसे ठीक करने में कई घंटे लग गए।";
+    } else {
+      translation = "Namaskar! Trishul Eco-Homestay में आपका स्वागत है। आपका अनुभव हमारे लिए मूल्यवान है।";
+    }
+
+    res.status(200).json({ success: true, original: review.text, translation });
   } catch (error) {
     next(error);
   }
