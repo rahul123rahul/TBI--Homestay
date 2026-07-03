@@ -113,7 +113,7 @@ export default function Home() {
         setHomestays(resData.data);
       }
     } catch (error) {
-      console.error("Fetch Stays Error:", error);
+      console.warn("Fetch Stays Error:", error);
       toast.error(`Error loading homestays: ${error.message}`);
     } finally {
       setIsLoading(false);

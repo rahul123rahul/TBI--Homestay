@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import Homestay from "../models/Homestay.js";
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
+import { getMockHomestays, getMockReviews, addMockReview, addMockBooking, addMockQA } from "../config/mockStore.js";
 
 dotenv.config();
 
@@ -178,6 +179,54 @@ Output the result in JSON format.`;
 // 1. GET /api/homestays - Retrieve list of homestays (with category filter / location search)
 export const getHomestays = async (req, res, next) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      const mockList = getMockHomestays();
+      const { category, search, minPrice, maxPrice, minRating } = req.query;
+      let result = [...mockList];
+      
+      if (category && category !== "all" && category !== "Top Rated") {
+        result = result.filter(h => h.category.toLowerCase() === category.toLowerCase());
+      }
+      if (minPrice) {
+        result = result.filter(h => h.startingPrice >= Number(minPrice));
+      }
+      if (maxPrice) {
+        result = result.filter(h => h.startingPrice <= Number(maxPrice));
+      }
+      if (minRating) {
+        result = result.filter(h => h.rating >= Number(minRating));
+      }
+      if (search) {
+        const cleanSearch = search.toLowerCase();
+        result = result.filter(h => 
+          h.name.toLowerCase().includes(cleanSearch) ||
+          h.location.toLowerCase().includes(cleanSearch) ||
+          h.description.toLowerCase().includes(cleanSearch)
+        );
+      }
+      if (category === "Top Rated") {
+        result.sort((a, b) => b.rating - a.rating);
+      }
+      
+      const mockRevList = getMockReviews();
+      const resultWithReviews = result.map(h => {
+        const latest = mockRevList
+          .filter(r => String(r.homestay) === String(h._id))
+          .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        
+        return {
+          ...h,
+          latestReview: latest ? {
+            rating: latest.overallRating,
+            text: latest.text,
+            guestName: latest.travelType + " Travelers"
+          } : null
+        };
+      });
+      
+      return res.status(200).json({ success: true, count: resultWithReviews.length, data: resultWithReviews });
+    }
+
     const { category, search, minPrice, maxPrice, minRating, amenities, freeCancellation } = req.query;
     const query = {};
 
@@ -284,6 +333,20 @@ export const getHomestays = async (req, res, next) => {
 export const getHomestayById = async (req, res, next) => {
   try {
     const homestayId = req.params.id;
+    if (mongoose.connection.readyState !== 1) {
+      const mockList = getMockHomestays();
+      const homestay = mockList.find(h => String(h._id) === String(homestayId));
+      if (!homestay) {
+        return res.status(404).json({ success: false, error: `Homestay with ID ${homestayId} not found.` });
+      }
+      const mockRevList = getMockReviews();
+      const reviews = mockRevList
+        .filter(r => String(r.homestay) === String(homestay._id))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+      return res.status(200).json({ success: true, data: { ...homestay, reviews } });
+    }
+
     let homestay = null;
 
     if (mongoose.Types.ObjectId.isValid(homestayId)) {
@@ -307,16 +370,6 @@ export const getHomestayById = async (req, res, next) => {
 export const createHomestayReview = async (req, res, next) => {
   try {
     const homestayId = req.params.id;
-    let homestay = null;
-
-    if (mongoose.Types.ObjectId.isValid(homestayId)) {
-      homestay = await Homestay.findById(homestayId);
-    }
-
-    if (!homestay) {
-      return res.status(404).json({ success: false, error: `Homestay with ID ${homestayId} not found.` });
-    }
-
     const {
       overallRating,
       ratings,
@@ -351,6 +404,37 @@ export const createHomestayReview = async (req, res, next) => {
       }
     } else {
       classification = classifyReviewHeuristic(text);
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      try {
+        const newReview = addMockReview(homestayId, {
+          overallRating,
+          ratings,
+          text,
+          travelType,
+          stayedDuring,
+          recommend,
+          images,
+          videos,
+          source,
+          date,
+          classification
+        });
+        return res.status(201).json({ success: true, data: newReview });
+      } catch (err) {
+        return res.status(404).json({ success: false, error: err.message });
+      }
+    }
+
+    let homestay = null;
+
+    if (mongoose.Types.ObjectId.isValid(homestayId)) {
+      homestay = await Homestay.findById(homestayId);
+    }
+
+    if (!homestay) {
+      return res.status(404).json({ success: false, error: `Homestay with ID ${homestayId} not found.` });
     }
 
     // Generate custom numeric sequential ID
@@ -405,15 +489,24 @@ export const createHomestayReview = async (req, res, next) => {
 export const createHomestayBooking = async (req, res, next) => {
   try {
     const homestayId = req.params.id;
+    const { startDate, endDate } = req.body;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, error: "Both 'startDate' and 'endDate' are required." });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      try {
+        const bookings = addMockBooking(homestayId, startDate, endDate);
+        return res.status(200).json({ success: true, message: "Booking confirmed successfully!", data: bookings });
+      } catch (err) {
+        return res.status(404).json({ success: false, error: err.message });
+      }
+    }
+
     const homestay = await Homestay.findById(homestayId);
 
     if (!homestay) {
       return res.status(404).json({ success: false, error: `Homestay with ID ${homestayId} not found.` });
-    }
-
-    const { startDate, endDate } = req.body;
-    if (!startDate || !endDate) {
-      return res.status(400).json({ success: false, error: "Both 'startDate' and 'endDate' are required." });
     }
 
     homestay.bookings.push({
@@ -433,15 +526,24 @@ export const createHomestayBooking = async (req, res, next) => {
 export const createHomestayQA = async (req, res, next) => {
   try {
     const homestayId = req.params.id;
+    const { question, askedBy } = req.body;
+    if (!question || !question.trim()) {
+      return res.status(400).json({ success: false, error: "Question content is required." });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      try {
+        const newQA = addMockQA(homestayId, question, askedBy);
+        return res.status(201).json({ success: true, data: newQA });
+      } catch (err) {
+        return res.status(404).json({ success: false, error: err.message });
+      }
+    }
+
     const homestay = await Homestay.findById(homestayId);
 
     if (!homestay) {
       return res.status(404).json({ success: false, error: `Homestay with ID ${homestayId} not found.` });
-    }
-
-    const { question, askedBy } = req.body;
-    if (!question || !question.trim()) {
-      return res.status(400).json({ success: false, error: "Question content is required." });
     }
 
     homestay.questionsAndAnswers.push({
@@ -461,6 +563,20 @@ export const createHomestayQA = async (req, res, next) => {
 // 6. POST /api/homestays - Add a new homestay (Admin / Staff use)
 export const createHomestay = async (req, res, next) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      const mockList = getMockHomestays();
+      const newHomestay = {
+        _id: new mongoose.Types.ObjectId(),
+        ...req.body,
+        rating: 5.0,
+        reviewsCount: 0,
+        bookings: [],
+        questionsAndAnswers: []
+      };
+      mockList.push(newHomestay);
+      return res.status(201).json({ success: true, data: newHomestay });
+    }
+
     const homestay = await Homestay.create(req.body);
     res.status(201).json({ success: true, data: homestay });
   } catch (error) {

@@ -51,10 +51,7 @@ app.use((req, res, next) => {
 // Middleware to check database connection status
 app.use("/api", (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({
-      success: false,
-      error: "Database Connection Error: The backend is currently unable to connect to MongoDB. If you are using MongoDB Atlas, make sure your current IP address is whitelisted in your MongoDB Atlas console (under Security -> Network Access)."
-    });
+    console.warn(`[Offline Mode] DB not connected. Serving request ${req.method} ${req.url} using local in-memory fallback.`);
   }
   next();
 });

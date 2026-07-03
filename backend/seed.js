@@ -18,7 +18,7 @@ const mockUserImages = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"  // Male
 ];
 
-const seedHomestaysData = [
+export const seedHomestaysData = [
   {
     name: "Trishul Eco-Homestay",
     location: "Ranikhet, Uttarakhand",
@@ -297,7 +297,7 @@ const seedHomestaysData = [
   }
 ];
 
-const seedReviewsData = [
+export const seedReviewsData = [
   {
     id: "1",
     date: "June 18, 2026",

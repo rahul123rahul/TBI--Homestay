@@ -91,7 +91,7 @@ export default function HomestayDetail({ params }) {
         setReviews(data.data.reviews || []);
       }
     } catch (error) {
-      console.error("Fetch Stay Error:", error);
+      console.warn("Fetch Stay Error:", error);
       toast.error(`Error loading details: ${error.message}`);
     } finally {
       setIsLoading(false);
