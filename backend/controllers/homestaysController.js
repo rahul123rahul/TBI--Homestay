@@ -181,7 +181,7 @@ export const getHomestays = async (req, res, next) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       const mockList = getMockHomestays();
-      const { category, search, minPrice, maxPrice, minRating } = req.query;
+      const { category, search, minPrice, maxPrice, minRating, amenities, freeCancellation } = req.query;
       let result = [...mockList];
       
       if (category && category !== "all" && category !== "Top Rated") {
@@ -195,6 +195,23 @@ export const getHomestays = async (req, res, next) => {
       }
       if (minRating) {
         result = result.filter(h => h.rating >= Number(minRating));
+      }
+      if (amenities) {
+        const amenitiesList = Array.isArray(amenities)
+          ? amenities.map(a => a.toLowerCase().trim())
+          : amenities.split(",").map(a => a.toLowerCase().trim());
+        if (amenitiesList.length > 0) {
+          result = result.filter(h => {
+            const hAmens = (h.amenities || []).map(a => a.toLowerCase().trim());
+            return amenitiesList.every(a => hAmens.includes(a));
+          });
+        }
+      }
+      if (freeCancellation === "true") {
+        result = result.filter(h => {
+          const rules = h.rules || [];
+          return !rules.some(r => /no cancellation/i.test(r));
+        });
       }
       if (search) {
         const cleanSearch = search.toLowerCase();
