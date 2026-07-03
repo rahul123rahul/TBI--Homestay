@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Loader, Modal, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 const mockUserImages = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
@@ -69,7 +70,7 @@ export default function HomestayDetail({ params }) {
 
   const fetchStayDetails = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/homestays/${id}`);
+      const res = await fetch(`${API_URL}/api/homestays/${id}`);
       if (!res.ok) {
         if (res.status === 404) {
           toast.error("Homestay not found");
@@ -127,7 +128,7 @@ export default function HomestayDetail({ params }) {
     setTimeout(async () => {
       // API call to confirm booking and block dates in MongoDB
       try {
-        const res = await fetch(`http://localhost:5000/api/homestays/${id}/bookings`, {
+        const res = await fetch(`${API_URL}/api/homestays/${id}/bookings`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -176,7 +177,7 @@ export default function HomestayDetail({ params }) {
   // Helpful vote
   const handleHelpfulVote = async (revId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${revId}/vote`, { method: "POST" });
+      const res = await fetch(`${API_URL}/api/reviews/${revId}/vote`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
         toast.success("Thanks for voting!");
@@ -192,7 +193,7 @@ export default function HomestayDetail({ params }) {
   const handleReportReview = async (revId) => {
     if (!window.confirm("Are you sure you want to flag/report this review to administrative moderators?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${revId}/report`, { method: "POST" });
+      const res = await fetch(`${API_URL}/api/reviews/${revId}/report`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
         toast.warning("Review flagged for review.");
@@ -215,7 +216,7 @@ export default function HomestayDetail({ params }) {
 
     setTranslatingIds({ ...translatingIds, [revId]: true });
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${revId}/translate`);
+      const res = await fetch(`${API_URL}/api/reviews/${revId}/translate`);
       const data = await res.json();
       if (data.success) {
         setTranslatedReviews({ ...translatedReviews, [revId]: data.translation });
@@ -265,7 +266,7 @@ export default function HomestayDetail({ params }) {
 
     setIsQASubmitting(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/homestays/${id}/questions`, {
+      const res = await fetch(`${API_URL}/api/homestays/${id}/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: newQuestion, askedBy: guestNameQA || "Anonymous Guest" })
@@ -323,7 +324,7 @@ export default function HomestayDetail({ params }) {
         source: "Direct Feedback"
       };
 
-      const res = await fetch(`http://localhost:5000/api/homestays/${id}/reviews`, {
+      const res = await fetch(`${API_URL}/api/homestays/${id}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

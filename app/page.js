@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button, Loader } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 const CATEGORIES = [
   { name: "All Stays", value: "all", icon: "🏡" },
@@ -87,7 +88,7 @@ export default function Home() {
   const fetchHomestays = async (cat = "all", loc = "", minP = minPrice, maxP = maxPrice, minR = minRating, amens = selectedAmenities, freeCancel = freeCancellation) => {
     setIsLoading(true);
     try {
-      let url = `http://localhost:5000/api/homestays?category=${cat}`;
+      let url = `${API_URL}/api/homestays?category=${cat}`;
       if (loc) {
         url += `&search=${encodeURIComponent(loc)}`;
       }

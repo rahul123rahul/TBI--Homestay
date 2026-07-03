@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Loader, Modal, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 export default function OwnerDashboard() {
   const router = useRouter();
@@ -65,7 +66,7 @@ export default function OwnerDashboard() {
     setIsLoading(true);
     try {
       // 1. Stats
-      const statsRes = await fetch("http://localhost:5000/api/owner/stats");
+      const statsRes = await fetch(`${API_URL}/api/owner/stats`);
       const statsJson = await statsRes.json();
       if (statsJson.success) {
         setStats(statsJson.data.stats);
@@ -74,7 +75,7 @@ export default function OwnerDashboard() {
       }
 
       // 2. Homestay Details & Calendar Bookings
-      const homestayRes = await fetch("http://localhost:5000/api/owner/homestay");
+      const homestayRes = await fetch(`${API_URL}/api/owner/homestay`);
       const homestayJson = await homestayRes.json();
       if (homestayJson.success) {
         setHomestay(homestayJson.data);
@@ -82,14 +83,14 @@ export default function OwnerDashboard() {
       }
 
       // 3. Reviews
-      const reviewsRes = await fetch("http://localhost:5000/api/owner/reviews");
+      const reviewsRes = await fetch(`${API_URL}/api/owner/reviews`);
       const reviewsJson = await reviewsRes.json();
       if (reviewsJson.success) {
         setReviews(reviewsJson.data);
       }
 
       // 4. Offers & Coupons
-      const marketingRes = await fetch("http://localhost:5000/api/owner/marketing");
+      const marketingRes = await fetch(`${API_URL}/api/owner/marketing`);
       const marketingJson = await marketingRes.json();
       if (marketingJson.success) {
         setOffers(marketingJson.data.offers || []);
@@ -97,7 +98,7 @@ export default function OwnerDashboard() {
       }
 
       // 5. Notifications
-      const notifRes = await fetch("http://localhost:5000/api/owner/notifications");
+      const notifRes = await fetch(`${API_URL}/api/owner/notifications`);
       const notifJson = await notifRes.json();
       if (notifJson.success) {
         setNotifications(notifJson.data || []);
@@ -128,7 +129,7 @@ export default function OwnerDashboard() {
 
       if (block) {
         try {
-          const res = await fetch("http://localhost:5000/api/owner/calendar/block", {
+          const res = await fetch(`${API_URL}/api/owner/calendar/block`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ bookingId: block._id })
@@ -145,7 +146,7 @@ export default function OwnerDashboard() {
     } else {
       // Block this date as owner block (1 day)
       try {
-        const res = await fetch("http://localhost:5000/api/owner/calendar/block", {
+        const res = await fetch(`${API_URL}/api/owner/calendar/block`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ startDate: targetDate, endDate: targetDate })
@@ -166,7 +167,7 @@ export default function OwnerDashboard() {
     e.preventDefault();
     if (!replyText.trim() || !selectedReview) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/owner/reviews/${selectedReview._id}/reply`, {
+      const res = await fetch(`${API_URL}/api/owner/reviews/${selectedReview._id}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ response: replyText })
@@ -206,7 +207,7 @@ export default function OwnerDashboard() {
     if (!newPhotoUrl.trim() || !homestay) return;
     try {
       const updatedImages = [...homestay.images, newPhotoUrl];
-      const res = await fetch("http://localhost:5000/api/owner/homestay/photos", {
+      const res = await fetch(`${API_URL}/api/owner/homestay/photos`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: updatedImages })
@@ -226,7 +227,7 @@ export default function OwnerDashboard() {
     if (!homestay) return;
     try {
       const updatedImages = homestay.images.filter((_, i) => i !== indexToDelete);
-      const res = await fetch("http://localhost:5000/api/owner/homestay/photos", {
+      const res = await fetch(`${API_URL}/api/owner/homestay/photos`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: updatedImages })
@@ -248,7 +249,7 @@ export default function OwnerDashboard() {
       const filtered = homestay.images.filter((_, i) => i !== indexToPrimary);
       const updatedImages = [selected, ...filtered]; // Move to index 0
 
-      const res = await fetch("http://localhost:5000/api/owner/homestay/photos", {
+      const res = await fetch(`${API_URL}/api/owner/homestay/photos`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: updatedImages })
@@ -268,7 +269,7 @@ export default function OwnerDashboard() {
     e.preventDefault();
     if (!couponCode || !couponDiscount) return;
     try {
-      const res = await fetch("http://localhost:5000/api/owner/coupons", {
+      const res = await fetch(`${API_URL}/api/owner/coupons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -292,7 +293,7 @@ export default function OwnerDashboard() {
 
   const handleDeleteCoupon = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/owner/coupons/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/api/owner/coupons/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         toast.success("Coupon deleted.");
@@ -308,7 +309,7 @@ export default function OwnerDashboard() {
     e.preventDefault();
     if (!offerTitle || !offerDiscount) return;
     try {
-      const res = await fetch("http://localhost:5000/api/owner/offers", {
+      const res = await fetch(`${API_URL}/api/owner/offers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -334,7 +335,7 @@ export default function OwnerDashboard() {
 
   const handleDeleteOffer = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/owner/offers/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/api/owner/offers/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         toast.success("Offer package deleted.");
@@ -348,7 +349,7 @@ export default function OwnerDashboard() {
   // Notification read
   const handleMarkNotificationRead = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/owner/notifications/${id}/read`, { method: "PUT" });
+      const res = await fetch(`${API_URL}/api/owner/notifications/${id}/read`, { method: "PUT" });
       const json = await res.json();
       if (json.success) {
         fetchOwnerData();

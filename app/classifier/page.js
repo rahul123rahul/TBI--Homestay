@@ -5,6 +5,7 @@ import Hero from "@/components/Hero";
 import Card from "@/components/Card";
 import { Button, Loader } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 export default function Classifier() {
   const consoleRef = useRef(null);
@@ -37,7 +38,7 @@ export default function Classifier() {
 
     try {
       const lines = reviewsInput.split("\n").filter((l) => l.trim() !== "");
-      const res = await fetch("http://localhost:5000/api/reviews/analyze", {
+      const res = await fetch(`${API_URL}/api/reviews/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Loader, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -41,11 +42,11 @@ export default function Dashboard() {
     } else {
       const fetchTelemetry = async () => {
         try {
-          const statsRes = await fetch("http://localhost:5000/api/reviews/stats");
+          const statsRes = await fetch(`${API_URL}/api/reviews/stats`);
           if (!statsRes.ok) throw new Error(`Stats endpoint responded with status ${statsRes.status}`);
           const statsData = await statsRes.json();
 
-          const reviewsRes = await fetch("http://localhost:5000/api/reviews");
+          const reviewsRes = await fetch(`${API_URL}/api/reviews`);
           if (!reviewsRes.ok) throw new Error(`Reviews endpoint responded with status ${reviewsRes.status}`);
           const reviewsData = await reviewsRes.json();
 

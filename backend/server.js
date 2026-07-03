@@ -32,9 +32,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 
-// Configure CORS to allow frontend origin
+// Configure CORS to allow frontend origin (both local dev and production)
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: [
+    "http://localhost:3000",
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));

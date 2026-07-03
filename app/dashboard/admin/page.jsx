@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Loader, Modal, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -78,63 +79,63 @@ export default function AdminDashboard() {
     setIsLoading(true);
     try {
       // 1. Overview stats
-      const overRes = await fetch("http://localhost:5000/api/admin/overview");
+      const overRes = await fetch(`${API_URL}/api/admin/overview`);
       const overJson = await overRes.json();
       if (overJson.success) {
         setOverviewStats(overJson.data.stats);
       }
 
       // 2. Users
-      const usersRes = await fetch("http://localhost:5000/api/admin/users");
+      const usersRes = await fetch(`${API_URL}/api/admin/users`);
       const usersJson = await usersRes.json();
       if (usersJson.success) {
         setUsers(usersJson.data);
       }
 
       // 3. Verifications
-      const verRes = await fetch("http://localhost:5000/api/admin/verifications");
+      const verRes = await fetch(`${API_URL}/api/admin/verifications`);
       const verJson = await verRes.json();
       if (verJson.success) {
         setVerifications(verJson.data);
       }
 
       // 4. Homestays
-      const homeRes = await fetch("http://localhost:5000/api/admin/homestays");
+      const homeRes = await fetch(`${API_URL}/api/admin/homestays`);
       const homeJson = await homeRes.json();
       if (homeJson.success) {
         setHomestays(homeJson.data);
       }
 
       // 5. Bookings
-      const bookRes = await fetch("http://localhost:5000/api/admin/bookings");
+      const bookRes = await fetch(`${API_URL}/api/admin/bookings`);
       const bookJson = await bookRes.json();
       if (bookJson.success) {
         setBookings(bookJson.data);
       }
 
       // 6. Reviews
-      const revRes = await fetch("http://localhost:5000/api/admin/reviews");
+      const revRes = await fetch(`${API_URL}/api/admin/reviews`);
       const revJson = await revRes.json();
       if (revJson.success) {
         setReviews(revJson.data);
       }
 
       // 7. Complaints
-      const compRes = await fetch("http://localhost:5000/api/admin/complaints");
+      const compRes = await fetch(`${API_URL}/api/admin/complaints`);
       const compJson = await compRes.json();
       if (compJson.success) {
         setComplaints(compJson.data);
       }
 
       // 8. Ads
-      const adsRes = await fetch("http://localhost:5000/api/admin/ads");
+      const adsRes = await fetch(`${API_URL}/api/admin/ads`);
       const adsJson = await adsRes.json();
       if (adsJson.success) {
         setAds(adsJson.data);
       }
 
       // 9. CMS & SEO Settings
-      const cmsRes = await fetch("http://localhost:5000/api/admin/cms-seo");
+      const cmsRes = await fetch(`${API_URL}/api/admin/cms-seo`);
       const cmsJson = await cmsRes.json();
       if (cmsJson.success && cmsJson.data) {
         setCmsSeo(cmsJson.data);
@@ -156,13 +157,13 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!userName || !userEmail) return;
     try {
-      let url = "http://localhost:5000/api/admin/users";
+      let url = `${API_URL}/api/admin/users`;
       let method = "POST";
       const body = { name: userName, email: userEmail, role: userRole };
       if (userPassword) body.password = userPassword;
 
       if (selectedUser) {
-        url = `http://localhost:5000/api/admin/users/${selectedUser._id}`;
+        url = `${API_URL}/api/admin/users/${selectedUser._id}`;
         method = "PUT";
       } else {
         if (!userPassword) {
@@ -195,7 +196,7 @@ export default function AdminDashboard() {
   const handleDeleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/api/admin/users/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         toast.success("User deleted successfully.");
@@ -211,7 +212,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!selectedVerification) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/verifications/${selectedVerification._id}`, {
+      const res = await fetch(`${API_URL}/api/admin/verifications/${selectedVerification._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "Approved", comments: verificationNotes })
@@ -232,7 +233,7 @@ export default function AdminDashboard() {
   // Homestay featured toggle & deletion
   const handleToggleFeatured = async (id, isCurrentlyFeatured) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/homestays/${id}/featured`, {
+      const res = await fetch(`${API_URL}/api/admin/homestays/${id}/featured`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ featured: !isCurrentlyFeatured })
@@ -250,7 +251,7 @@ export default function AdminDashboard() {
   const handleDeleteHomestay = async (id) => {
     if (!window.confirm("Are you sure you want to delete this homestay?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/homestays/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/api/admin/homestays/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         toast.success("Homestay listing removed.");
@@ -264,7 +265,7 @@ export default function AdminDashboard() {
   // Booking approval/cancel status updates
   const handleUpdateBookingStatus = async (id, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/bookings/${id}/status`, {
+      const res = await fetch(`${API_URL}/api/admin/bookings/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })
@@ -284,7 +285,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!selectedComplaint) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/complaints/${selectedComplaint._id}/resolve`, {
+      const res = await fetch(`${API_URL}/api/admin/complaints/${selectedComplaint._id}/resolve`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "Resolved", resolutionNotes: complaintNotes })
@@ -307,7 +308,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!newAdHomestay || !newAdBudget) return;
     try {
-      const res = await fetch("http://localhost:5000/api/admin/ads", {
+      const res = await fetch(`${API_URL}/api/admin/ads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -330,7 +331,7 @@ export default function AdminDashboard() {
 
   const handleToggleAdStatus = async (id, currentActiveState) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/ads/${id}/toggle`, {
+      const res = await fetch(`${API_URL}/api/admin/ads/${id}/toggle`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !currentActiveState })
@@ -349,7 +350,7 @@ export default function AdminDashboard() {
   const handleSaveCmsSeo = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/api/admin/cms-seo", {
+      const res = await fetch(`${API_URL}/api/admin/cms-seo`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

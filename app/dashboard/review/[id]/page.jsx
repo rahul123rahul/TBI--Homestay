@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Loader } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import { API_URL } from "@/lib/config";
 
 // Mock review data matching the dashboard logs
 const mockReviews = {
@@ -78,7 +79,7 @@ export default function ReviewDetail({ params }) {
 
     const fetchReview = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/reviews/${id}`);
+        const res = await fetch(`${API_URL}/api/reviews/${id}`);
         if (!res.ok) {
           if (res.status === 404) {
             toast.error("Review record not found in database.");
@@ -110,7 +111,7 @@ export default function ReviewDetail({ params }) {
 
   const saveReviewChanges = async (updatedFields) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${id}`, {
+      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -137,7 +138,7 @@ export default function ReviewDetail({ params }) {
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this review from the database? This action cannot be undone.")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${id}`, {
+      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`Delete failed with status ${res.status}`);
