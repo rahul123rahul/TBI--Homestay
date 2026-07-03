@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import reviewsRouter from "./routes/reviews.js";
 import homestaysRouter from "./routes/homestays.js";
 import ownerRouter from "./routes/owner.js";
@@ -44,6 +45,17 @@ app.use(express.json());
 // Request logger middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Middleware to check database connection status
+app.use("/api", (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      error: "Database Connection Error: The backend is currently unable to connect to MongoDB. If you are using MongoDB Atlas, make sure your current IP address is whitelisted in your MongoDB Atlas console (under Security -> Network Access)."
+    });
+  }
   next();
 });
 

@@ -98,7 +98,16 @@ export default function Home() {
       if (freeCancel) url += `&freeCancellation=true`;
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to load listings");
+      if (!res.ok) {
+        let errMsg = "Failed to load listings";
+        try {
+          const resData = await res.json();
+          if (resData && resData.error) {
+            errMsg = resData.error;
+          }
+        } catch (e) {}
+        throw new Error(errMsg);
+      }
       const resData = await res.json();
       if (resData.success) {
         setHomestays(resData.data);

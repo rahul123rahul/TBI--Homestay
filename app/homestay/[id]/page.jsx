@@ -76,7 +76,14 @@ export default function HomestayDetail({ params }) {
           router.push("/");
           return;
         }
-        throw new Error(`Server responded with ${res.status}`);
+        let errMsg = `Server responded with ${res.status}`;
+        try {
+          const resData = await res.json();
+          if (resData && resData.error) {
+            errMsg = resData.error;
+          }
+        } catch (e) {}
+        throw new Error(errMsg);
       }
       const data = await res.json();
       if (data.success) {
