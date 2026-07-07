@@ -5,6 +5,12 @@ import React, { useEffect, useRef } from "react";
 export function Modal({ isOpen, onClose, title, children }) {
   const modalRef = useRef(null);
   const previousFocus = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  // Keep ref updated to avoid stale closure in event listener
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Focus Trapping and Escape Key Handler
   useEffect(() => {
@@ -24,7 +30,7 @@ export function Modal({ isOpen, onClose, title, children }) {
     const handleKeyDown = (e) => {
       // Close on Escape key
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -77,7 +83,7 @@ export function Modal({ isOpen, onClose, title, children }) {
         previousFocus.current.focus();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -686,7 +686,7 @@ export default function AdminDashboard() {
           {homestays.map((h, idx) => (
             <div key={idx} className="rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
               <div className="flex gap-4">
-                <img src={h.images[0]} alt={h.name} className="h-20 w-24 object-cover rounded-lg border border-border" />
+                <img src={(h.images && h.images[0]) || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600"} alt={h.name} className="h-20 w-24 object-cover rounded-lg border border-border" />
                 <div className="flex-1 space-y-1">
                   <h4 className="text-sm font-bold text-primary dark:text-primary-foreground">{h.name}</h4>
                   <p className="text-xs text-muted-foreground">{h.location}</p>
@@ -695,7 +695,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
-                <span className="text-[10px] text-muted-foreground">Host: {h.hostDetails.name}</span>
+                <span className="text-[10px] text-muted-foreground">Host: {h.hostDetails?.name || "Unlinked Host"}</span>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"

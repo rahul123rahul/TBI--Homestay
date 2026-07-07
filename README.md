@@ -47,6 +47,24 @@ This is a comprehensive, production-grade full-stack lodging and review telemetr
 
 ---
 
+## 📊 Database Schema Diagram
+
+The database uses MongoDB with Mongoose as the ODM. The schema consists of core collections (User, Homestay, Booking), user feedback/support systems (Review, Complaint), and administrative/marketing modules (Notification, VerificationRequest, Coupons, Offers, Campaigns, and SEO configuration).
+
+Below is the visual Entity-Relationship Diagram (ERD) mapping the schemas, field types, primary/foreign key connections, and constraints:
+
+![Trishul Eco-Homestays Schema Diagram](W5_SchemaDiagram_TBI-26100518.png)
+
+### Key Relationships & Data Flow:
+* **User & Homestay**: A `User` (specifically with `role: "Owner"`) can own multiple `Homestays` (1-to-many relationship linked via `owner`).
+* **Homestay & Booking**: Guests book a specific homestay, creating a `Booking` linked via `homestay` (1-to-many relationship).
+* **Homestay & Feedback**: Both `Review` and `Complaint` documents are linked directly to their target `Homestay` via reference fields.
+* **Review & Response**: Reviews can have response drafts created and responded to by system users (Staff, Admins, or Owners), linked via the `respondedBy` field.
+* **Owner & Verification**: Owners submit property documents via `VerificationRequest` objects for Admin approval, linked via the `owner` field.
+* **Marketing & Promotions**: Promotions like `Offer` and `AdCampaign` are tied to specific `Homestays` to manage campaign slots, validity, and advertising budgets.
+
+---
+
 ## 📂 Project Structure
 
 ```text

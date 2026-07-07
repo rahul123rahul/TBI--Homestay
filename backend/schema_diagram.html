@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trishul Eco-Homestays Schema Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(22, 30, 49, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-pk: #f43f5e;
+      --accent-fk: #06b6d4;
+      --accent-type: #38bdf8;
+      --accent-req: #10b981;
+      --accent-enum: #a78bfa;
+      --grid-color: rgba(255, 255, 255, 0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      background-image: 
+        radial-gradient(var(--grid-color) 1.5px, transparent 1.5px),
+        linear-gradient(135deg, #090d16 0%, #05070c 100%);
+      background-size: 24px 24px, 100% 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+      width: 2000px;
+      height: 1300px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header {
+      position: absolute;
+      top: 30px;
+      left: 50px;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    header .legend {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    header .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    header .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.pk { background-color: var(--accent-pk); }
+    .legend-dot.fk { background-color: var(--accent-fk); }
+    .legend-dot.req { background-color: var(--accent-req); }
+
+    /* SVG Relations Layer */
+    .relations-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Cards Layer */
+    .cards-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+    }
+
+    /* Entity Card */
+    .card {
+      position: absolute;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.85;
+    }
+
+    .card-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Category colors for card headers */
+    .card.core .card-header { border-left: 3px solid #60a5fa; }
+    .card.booking .card-header { border-left: 3px solid #f472b6; }
+    .card.support .card-header { border-left: 3px solid #fbbf24; }
+    .card.system .card-header { border-left: 3px solid #2dd4bf; }
+    .card.marketing .card-header { border-left: 3px solid #a78bfa; }
+
+    .card-body {
+      padding: 8px 0;
+    }
+
+    .field {
+      padding: 6px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .field:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .field-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+
+    .field-key {
+      font-family: 'Fira Code', monospace;
+      font-size: 9px;
+      padding: 1px 3px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+
+    .field-key.pk {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-pk);
+    }
+
+    .field-key.fk {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent-fk);
+    }
+
+    .field-type {
+      font-family: 'Fira Code', monospace;
+      color: var(--text-muted);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .field-type .req-dot {
+      color: var(--accent-req);
+      font-weight: bold;
+    }
+
+    .field-type .enum-badge {
+      font-size: 8px;
+      padding: 1px 4px;
+      background: rgba(167, 139, 250, 0.12);
+      color: var(--accent-enum);
+      border-radius: 3px;
+      border: 1px solid rgba(167, 139, 250, 0.2);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--card-border);
+      margin: 4px 0;
+    }
+
+    .embed-section {
+      padding: 4px 16px;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Trishul Eco-Homestays Database Schema</h1>
+    <p>Mongoose ODM / MongoDB Entity-Relationship Map & Integrity Model</p>
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-dot pk"></span> Primary Key (ObjectId)
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot fk"></span> Foreign Key (Reference)
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot req"></span> Required Field
+      </div>
+    </div>
+  </header>
+
+  <!-- SVG Relations Drawing -->
+  <svg class="relations-layer">
+    <defs>
+      <!-- Arrow markers -->
+      <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+      </marker>
+      <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399" />
+      </marker>
+      <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+      </marker>
+      <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#c084fc" />
+      </marker>
+      
+      <!-- Crow's foot / Line styles -->
+      <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur stdDeviation="2" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>
+
+    <!-- User to VerificationRequest (FK: owner -> User._id) -->
+    <!-- VerificationRequest Right-Center: 730, 160. User Left-Center: 860, 160. -->
+    <path d="M 730 160 H 860" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow-blue)" opacity="0.75" />
+
+    <!-- User to Notification (FK: recipient -> User._id) -->
+    <!-- Notification Left-Center: 1270, 160. User Right-Center: 1140, 160. -->
+    <path d="M 1270 160 H 1140" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow-blue)" opacity="0.75" />
+
+    <!-- User to Homestay (FK: owner -> User._id) -->
+    <!-- User Bottom-Center: 1000, 290. Homestay Top-Center: 1000, 380. -->
+    <path d="M 1000 290 V 380" stroke="#38bdf8" stroke-width="2" fill="none" marker-end="url(#arrow-blue)" opacity="0.75" />
+
+    <!-- Homestay to Booking (FK: homestay -> Homestay._id) -->
+    <!-- Booking Right-Center: 730, 560. Homestay Left-Side: 840, 560. -->
+    <path d="M 730 560 H 840" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)" opacity="0.75" />
+
+    <!-- Homestay to Complaint (FK: homestay -> Homestay._id) -->
+    <!-- Complaint Right-Center: 730, 900. Homestay Left-Side: 840, 780. -->
+    <path d="M 730 900 H 785 V 780 H 840" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)" opacity="0.75" />
+
+    <!-- Homestay to Review (FK: homestay -> Homestay._id) -->
+    <!-- Review Top-Center: 1000, 920. Homestay Bottom-Center: 1000, 860. -->
+    <path d="M 1000 920 V 860" stroke="#34d399" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)" opacity="0.75" />
+
+    <!-- User to Review Response (FK: respondedBy -> User._id) -->
+    <!-- Review Left-Center: 850, 1100. User Left-Center via curved backline. -->
+    <path d="M 850 1100 H 770 V 220 H 860" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow-blue)" opacity="0.6" />
+
+    <!-- Homestay to Offer (FK: homestay -> Homestay._id) -->
+    <!-- Offer Left-Center: 1270, 730. Homestay Right-Side: 1160, 620. -->
+    <path d="M 1270 730 H 1215 V 620 H 1160" stroke="#c084fc" stroke-width="2" fill="none" marker-end="url(#arrow-purple)" opacity="0.75" />
+
+    <!-- Homestay to AdCampaign (FK: homestay -> Homestay._id) -->
+    <!-- AdCampaign Left-Center: 1270, 980. Homestay Right-Side: 1160, 780. -->
+    <path d="M 1270 980 H 1215 V 780 H 1160" stroke="#c084fc" stroke-width="2" fill="none" marker-end="url(#arrow-purple)" opacity="0.75" />
+  </svg>
+
+  <div class="cards-layer">
+
+    <!-- USER CARD -->
+    <div class="card core" style="left: 860px; top: 60px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+          User
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">name</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">email</div>
+          <div class="field-type"><span class="req-dot">•</span> String (unique)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">password</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">role</div>
+          <div class="field-type"><span class="req-dot">•</span> String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="field">
+          <div class="field-name">createdAt</div>
+          <div class="field-type">Date</div>
+        </div>
+        <div class="field">
+          <div class="field-name">updatedAt</div>
+          <div class="field-type">Date</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VERIFICATION REQUEST CARD -->
+    <div class="card support" style="left: 450px; top: 60px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.9L10 1.554 17.834 4.9a1 1 0 01.666.942v4.28c0 5.255-3.078 9.716-7.5 11.23a1 1 0 01-.668 0C5.744 19.836 2.667 15.376 2.667 10.12V5.842a1 1 0 01.666-.943L2.166 4.9z" clip-rule="evenodd"></path></svg>
+          VerificationRequest
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> owner</div>
+          <div class="field-type"><span class="req-dot">•</span> Ref (User)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">propertyName</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">documents</div>
+          <div class="field-type">Array [String]</div>
+        </div>
+        <div class="field">
+          <div class="field-name">status</div>
+          <div class="field-type">String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="field">
+          <div class="field-name">comments</div>
+          <div class="field-type">String</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION CARD -->
+    <div class="card system" style="left: 1270px; top: 60px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+          Notification
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> recipient</div>
+          <div class="field-type"><span class="req-dot">•</span> Ref (User)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">message</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">type</div>
+          <div class="field-type">String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="field">
+          <div class="field-name">read</div>
+          <div class="field-type">Boolean</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOMESTAY CARD -->
+    <div class="card core" style="left: 840px; top: 380px; width: 320px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+          Homestay
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">name</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">location</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">startingPrice</div>
+          <div class="field-type"><span class="req-dot">•</span> Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">rating / reviewsCount</div>
+          <div class="field-type">Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">category</div>
+          <div class="field-type"><span class="req-dot">•</span> String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> owner</div>
+          <div class="field-type">Ref (User) [Opt]</div>
+        </div>
+        <div class="field">
+          <div class="field-name">aiReviewSummary</div>
+          <div class="field-type">String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">images / amenities</div>
+          <div class="field-type">Array [String]</div>
+        </div>
+        
+        <div class="divider"></div>
+        <div class="embed-section">Embedded Schemas</div>
+        
+        <div class="field">
+          <div class="field-name">locationMap</div>
+          <div class="field-type">{lat, lng, address}</div>
+        </div>
+        <div class="field">
+          <div class="field-name">hostDetails</div>
+          <div class="field-type">{name, photo, bio, joined}</div>
+        </div>
+        <div class="field">
+          <div class="field-name">nearbyAttractions</div>
+          <div class="field-type">[{name, distance}]</div>
+        </div>
+        <div class="field">
+          <div class="field-name">questionsAndAnswers</div>
+          <div class="field-type">[QASchema]</div>
+        </div>
+        <div class="field">
+          <div class="field-name">bookings</div>
+          <div class="field-type">[{startDate, endDate}]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOKING CARD -->
+    <div class="card booking" style="left: 450px; top: 420px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+          Booking
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> homestay</div>
+          <div class="field-type"><span class="req-dot">•</span> Ref (Homestay)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">guestName</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">guestEmail</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">startDate</div>
+          <div class="field-type"><span class="req-dot">•</span> Date</div>
+        </div>
+        <div class="field">
+          <div class="field-name">endDate</div>
+          <div class="field-type"><span class="req-dot">•</span> Date</div>
+        </div>
+        <div class="field">
+          <div class="field-name">totalAmount</div>
+          <div class="field-type"><span class="req-dot">•</span> Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">status</div>
+          <div class="field-type">String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="field">
+          <div class="field-name">guestsCount</div>
+          <div class="field-type">Number</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLAINT CARD -->
+    <div class="card support" style="left: 450px; top: 780px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+          Complaint
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">guestName</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">guestEmail</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> homestay</div>
+          <div class="field-type"><span class="req-dot">•</span> Ref (Homestay)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">issue</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">status</div>
+          <div class="field-type">String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="field">
+          <div class="field-name">resolutionNotes</div>
+          <div class="field-type">String</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW CARD -->
+    <div class="card support" style="left: 850px; top: 920px; width: 300px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+          Review
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">id</div>
+          <div class="field-type"><span class="req-dot">•</span> String (unique)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">date / text</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">sentiment / theme</div>
+          <div class="field-type"><span class="req-dot">•</span> String <span class="enum-badge">enum</span></div>
+        </div>
+        <div class="field">
+          <div class="field-name">score</div>
+          <div class="field-type"><span class="req-dot">•</span> Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> homestay</div>
+          <div class="field-type">Ref (Homestay)</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> respondedBy</div>
+          <div class="field-type">Ref (User) [Opt]</div>
+        </div>
+        <div class="field">
+          <div class="field-name">response</div>
+          <div class="field-type">String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">overallRating</div>
+          <div class="field-type">Number (1-5)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">ratings</div>
+          <div class="field-type">embedded Object</div>
+        </div>
+        <div class="field">
+          <div class="field-name">spamScore</div>
+          <div class="field-type">Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">isVerifiedStay</div>
+          <div class="field-type">Boolean</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COUPON CARD -->
+    <div class="card marketing" style="left: 1270px; top: 420px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A1 1 0 013 5h3a1 1 0 001-1V3a1 1 0 011-1h6a1 1 0 011 1v1a1 1 0 001 1h3a1 1 0 011 1v3zM4 9a1 1 0 110-2 1 1 0 010 2z" clip-rule="evenodd"></path></svg>
+          Coupon
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">code</div>
+          <div class="field-type"><span class="req-dot">•</span> String (unique)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">discountPercentage</div>
+          <div class="field-type"><span class="req-dot">•</span> Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">validityDate</div>
+          <div class="field-type"><span class="req-dot">•</span> Date</div>
+        </div>
+        <div class="field">
+          <div class="field-name">minSpend</div>
+          <div class="field-type">Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">isActive</div>
+          <div class="field-type">Boolean</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFFER CARD -->
+    <div class="card marketing" style="left: 1270px; top: 620px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-2 0v1h2zm3 0H11V5a1 1 0 102 0v1z" clip-rule="evenodd"></path></svg>
+          Offer
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">title / description</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">discountRate</div>
+          <div class="field-type"><span class="req-dot">•</span> Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">validityDate</div>
+          <div class="field-type"><span class="req-dot">•</span> Date</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> homestay</div>
+          <div class="field-type"><span class="req-dot">•</span> Ref (Homestay)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">isActive</div>
+          <div class="field-type">Boolean</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADCAMPAIGN CARD -->
+    <div class="card marketing" style="left: 1270px; top: 850px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clip-rule="evenodd"></path></svg>
+          AdCampaign
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name"><span class="field-key fk">FK</span> homestay</div>
+          <div class="field-type"><span class="req-dot">•</span> Ref (Homestay)</div>
+        </div>
+        <div class="field">
+          <div class="field-name">promoSlot</div>
+          <div class="field-type"><span class="req-dot">•</span> String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">budget</div>
+          <div class="field-type"><span class="req-dot">•</span> Number</div>
+        </div>
+        <div class="field">
+          <div class="field-name">isActive</div>
+          <div class="field-type">Boolean</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CMS SEO CARD -->
+    <div class="card marketing" style="left: 1270px; top: 1040px; width: 280px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.033 1.413L10.958 6H13a2 2 0 110 4h-2v3.316a1.5 1.5 0 01-3 0V10H6a2 2 0 110-4h2V4.464l-1.391 1.392a1 1 0 11-1.414-1.414l3.125-3.125a1 1 0 011.414 0l3.125 3.125a1 1 0 01-.543 1.609z" clip-rule="evenodd"></path></svg>
+          CmsSeo
+        </div>
+        <div class="card-badge">Collection</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="field-name"><span class="field-key pk">PK</span> _id</div>
+          <div class="field-type">ObjectId</div>
+        </div>
+        <div class="field">
+          <div class="field-name">homepageHeroTitle</div>
+          <div class="field-type">String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">homepageHeroSubtitle</div>
+          <div class="field-type">String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">metaTitle</div>
+          <div class="field-type">String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">metaDescription</div>
+          <div class="field-type">String</div>
+        </div>
+        <div class="field">
+          <div class="field-name">activeCategories</div>
+          <div class="field-type">Array [String]</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

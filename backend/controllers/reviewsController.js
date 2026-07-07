@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import Review from "../models/Review.js";
 import mongoose from "mongoose";
+import { getMockReviews } from "../config/mockStore.js";
 
 dotenv.config();
 
@@ -180,8 +181,25 @@ Output the result in JSON format.`;
 export const getReviews = async (req, res, next) => {
   try {
     const { sentiment, theme } = req.query;
-    const filter = {};
 
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      let filtered = [...mockReviews];
+      if (sentiment) {
+        filtered = filtered.filter(r => r.sentiment && r.sentiment.toLowerCase() === sentiment.toLowerCase());
+      }
+      if (theme) {
+        filtered = filtered.filter(r => r.theme && r.theme.toLowerCase() === theme.toLowerCase());
+      }
+      filtered.sort((a, b) => {
+        const idA = parseInt(a.id) || 0;
+        const idB = parseInt(b.id) || 0;
+        return idB - idA;
+      });
+      return res.status(200).json({ success: true, count: filtered.length, data: filtered });
+    }
+
+    const filter = {};
     if (sentiment) {
       filter.sentiment = new RegExp(`^${sentiment}$`, "i");
     }
@@ -206,6 +224,21 @@ export const searchReviews = async (req, res, next) => {
       return res.status(400).json({ success: false, error: "Search query param 'q' is required." });
     }
 
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      const qLower = q.toLowerCase();
+      let filtered = mockReviews.filter(r => 
+        (r.text && r.text.toLowerCase().includes(qLower)) ||
+        (r.source && r.source.toLowerCase().includes(qLower))
+      );
+      filtered.sort((a, b) => {
+        const idA = parseInt(a.id) || 0;
+        const idB = parseInt(b.id) || 0;
+        return idB - idA;
+      });
+      return res.status(200).json({ success: true, count: filtered.length, data: filtered });
+    }
+
     const queryRegex = new RegExp(q, "i");
     const filtered = await Review.find({
       $or: [
@@ -224,8 +257,17 @@ export const searchReviews = async (req, res, next) => {
 export const getReviewById = async (req, res, next) => {
   try {
     const reviewId = req.params.id;
-    let review = null;
 
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      const review = mockReviews.find(r => String(r._id) === String(reviewId) || String(r.id) === String(reviewId));
+      if (!review) {
+        return res.status(404).json({ success: false, error: `Review with ID ${reviewId} not found.` });
+      }
+      return res.status(200).json({ success: true, data: review });
+    }
+
+    let review = null;
     if (mongoose.Types.ObjectId.isValid(reviewId)) {
       review = await Review.findById(reviewId);
     }
@@ -266,6 +308,28 @@ export const createReview = async (req, res, next) => {
       classification = classifyReviewHeuristic(text);
     }
 
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      const numericIds = mockReviews
+        .map(r => parseInt(r.id))
+        .filter(id => !isNaN(id));
+      const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+      const newId = String(maxId + 1);
+
+      const newReview = {
+        _id: new mongoose.Types.ObjectId(),
+        id: newId,
+        date: date || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        source: source || "Direct Feedback",
+        helpfulVotes: 0,
+        spamScore: 10,
+        isVerifiedStay: false,
+        ...classification
+      };
+      mockReviews.push(newReview);
+      return res.status(201).json({ success: true, data: newReview });
+    }
+
     // Auto-generate numeric custom ID based on existing max numeric ID
     const allReviews = await Review.find({}, { id: 1 });
     const numericIds = allReviews
@@ -300,7 +364,45 @@ export const bulkAnalyzeReviews = async (req, res, next) => {
     const apiKey = process.env.GEMINI_API_KEY;
     const results = [];
     const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    
+
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      const numericIds = mockReviews
+        .map(r => parseInt(r.id))
+        .filter(id => !isNaN(id));
+      let nextIdStart = numericIds.length > 0 ? Math.max(...numericIds) + 1 : 1;
+
+      for (let i = 0; i < inputReviews.length; i++) {
+        const text = inputReviews[i];
+        if (!text || !text.trim()) continue;
+
+        let classification;
+        if (apiKey) {
+          try {
+            classification = await classifyReviewGemini(text, apiKey);
+          } catch (err) {
+            classification = classifyReviewHeuristic(text);
+          }
+        } else {
+          classification = classifyReviewHeuristic(text);
+        }
+
+        const newReview = {
+          _id: new mongoose.Types.ObjectId(),
+          id: String(nextIdStart + i),
+          date: dateStr,
+          source: source || "Console Upload",
+          helpfulVotes: 0,
+          spamScore: 10,
+          isVerifiedStay: false,
+          ...classification
+        };
+        mockReviews.push(newReview);
+        results.push(newReview);
+      }
+      return res.status(201).json({ success: true, count: results.length, data: results });
+    }
+
     // Auto-generate numeric custom IDs sequentially
     const allReviews = await Review.find({}, { id: 1 });
     const numericIds = allReviews
@@ -344,8 +446,24 @@ export const bulkAnalyzeReviews = async (req, res, next) => {
 export const updateReview = async (req, res, next) => {
   try {
     const reviewId = req.params.id;
-    let review = null;
 
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      const review = mockReviews.find(r => String(r._id) === String(reviewId) || String(r.id) === String(reviewId));
+      if (!review) {
+        return res.status(404).json({ success: false, error: `Review with ID ${reviewId} not found.` });
+      }
+      const { sentiment, theme, response, text, source, score } = req.body;
+      if (sentiment) review.sentiment = sentiment;
+      if (theme) review.theme = theme;
+      if (response !== undefined) review.response = response;
+      if (text) review.text = text;
+      if (source) review.source = source;
+      if (score !== undefined) review.score = Number(score);
+      return res.status(200).json({ success: true, data: review });
+    }
+
+    let review = null;
     if (mongoose.Types.ObjectId.isValid(reviewId)) {
       review = await Review.findById(reviewId);
     }
@@ -379,8 +497,18 @@ export const updateReview = async (req, res, next) => {
 export const deleteReview = async (req, res, next) => {
   try {
     const reviewId = req.params.id;
-    let review = null;
 
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      const index = mockReviews.findIndex(r => String(r._id) === String(reviewId) || String(r.id) === String(reviewId));
+      if (index === -1) {
+        return res.status(404).json({ success: false, error: `Review with ID ${reviewId} not found.` });
+      }
+      mockReviews.splice(index, 1);
+      return res.status(204).end();
+    }
+
+    let review = null;
     if (mongoose.Types.ObjectId.isValid(reviewId)) {
       review = await Review.findById(reviewId);
     }
@@ -402,7 +530,12 @@ export const deleteReview = async (req, res, next) => {
 // 8. GET /api/reviews/stats - Get dynamic dashboard metrics
 export const getStats = async (req, res, next) => {
   try {
-    const reviews = await Review.find();
+    let reviews;
+    if (mongoose.connection.readyState !== 1) {
+      reviews = getMockReviews();
+    } else {
+      reviews = await Review.find();
+    }
     const totalReviews = reviews.length;
 
     // 1. Calculate Average Sentiment Score
@@ -490,12 +623,22 @@ export const getStats = async (req, res, next) => {
 // POST /api/reviews/:id/vote
 export const voteHelpful = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
-    if (!review) {
-      return res.status(404).json({ success: false, error: "Review not found" });
+    let review;
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      review = mockReviews.find(r => String(r._id) === String(req.params.id) || String(r.id) === String(req.params.id));
+      if (!review) {
+        return res.status(404).json({ success: false, error: "Review not found" });
+      }
+      review.helpfulVotes = (review.helpfulVotes || 0) + 1;
+    } else {
+      review = await Review.findById(req.params.id);
+      if (!review) {
+        return res.status(404).json({ success: false, error: "Review not found" });
+      }
+      review.helpfulVotes = (review.helpfulVotes || 0) + 1;
+      await review.save();
     }
-    review.helpfulVotes = (review.helpfulVotes || 0) + 1;
-    await review.save();
     res.status(200).json({ success: true, data: review });
   } catch (error) {
     next(error);
@@ -505,12 +648,22 @@ export const voteHelpful = async (req, res, next) => {
 // POST /api/reviews/:id/report
 export const reportReview = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
-    if (!review) {
-      return res.status(404).json({ success: false, error: "Review not found" });
+    let review;
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      review = mockReviews.find(r => String(r._id) === String(req.params.id) || String(r.id) === String(req.params.id));
+      if (!review) {
+        return res.status(404).json({ success: false, error: "Review not found" });
+      }
+      review.flagged = true;
+    } else {
+      review = await Review.findById(req.params.id);
+      if (!review) {
+        return res.status(404).json({ success: false, error: "Review not found" });
+      }
+      review.flagged = true;
+      await review.save();
     }
-    review.flagged = true;
-    await review.save();
     res.status(200).json({ success: true, data: review });
   } catch (error) {
     next(error);
@@ -520,7 +673,13 @@ export const reportReview = async (req, res, next) => {
 // GET /api/reviews/:id/translate
 export const translateReview = async (req, res, next) => {
   try {
-    const review = await Review.findById(req.params.id);
+    let review;
+    if (mongoose.connection.readyState !== 1) {
+      const mockReviews = getMockReviews();
+      review = mockReviews.find(r => String(r._id) === String(req.params.id) || String(r.id) === String(req.params.id));
+    } else {
+      review = await Review.findById(req.params.id);
+    }
     if (!review) {
       return res.status(404).json({ success: false, error: "Review not found" });
     }
